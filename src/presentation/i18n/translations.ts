@@ -13,15 +13,18 @@ const hu = {
   "home.loadingRoutes": "Útvonalak betöltése...",
   "home.failedToLoadRoutes": "Nem sikerült betölteni az útvonalakat.",
   "home.defaultRouteDescription": "Vezetett állomásos útvonal Szentendrén.",
+  "home.route.short.name": "Rövid útvonal",
+  "home.route.short.description": "Rövid, gyorsan bejárható városi útvonal.",
+  "home.route.medium.name": "Közepes útvonal",
+  "home.route.medium.description": "Kiegyensúlyozott útvonal a főbb látnivalókon át.",
+  "home.route.long.name": "Hosszú útvonal",
+  "home.route.long.description": "Teljes városi kaland az összes ellenőrzőponttal.",
   "home.startRoute": "Útvonal indítása",
   "home.routeMissingFirstLocation":
     "A(z) \"{routeName}\" útvonalhoz nincs aktív kezdő állomás beállítva.",
   "home.qrStartTitle": "Indítás QR-kódról",
   "home.scanQrWithCamera": "QR-szkennelés kamerával",
   "home.hideCameraScanner": "Kamera szkennelő elrejtése",
-  "home.pasteQrPayloadLabel": "QR-tartalom beillesztése",
-  "home.qrPayloadPlaceholder": "https://yourdomain.com/r/short/l/main-square",
-  "home.continue": "Továbblépés",
   "home.qrPayloadInvalid":
     "A QR-tartalomnak tartalmaznia kell az /r/{routeSlug}/l/{locationSlug} formátumot.",
   "quest.reason.outside_radius":
@@ -95,15 +98,18 @@ const en: Record<TranslationKey, string> = {
   "home.loadingRoutes": "Loading routes...",
   "home.failedToLoadRoutes": "Failed to load routes.",
   "home.defaultRouteDescription": "Guided station route through Szentendre.",
+  "home.route.short.name": "Short Route",
+  "home.route.short.description": "Compact route for quick exploration.",
+  "home.route.medium.name": "Medium Route",
+  "home.route.medium.description": "Balanced route across key landmarks.",
+  "home.route.long.name": "Long Route",
+  "home.route.long.description": "Full city quest route with all checkpoints.",
   "home.startRoute": "Start route",
   "home.routeMissingFirstLocation":
     "Route \"{routeName}\" has no active starting station configured.",
   "home.qrStartTitle": "Start from QR",
   "home.scanQrWithCamera": "Scan QR with camera",
   "home.hideCameraScanner": "Hide camera scanner",
-  "home.pasteQrPayloadLabel": "Paste QR payload",
-  "home.qrPayloadPlaceholder": "https://yourdomain.com/r/short/l/main-square",
-  "home.continue": "Continue",
   "home.qrPayloadInvalid":
     "QR payload must contain /r/{routeSlug}/l/{locationSlug}.",
   "quest.reason.outside_radius":

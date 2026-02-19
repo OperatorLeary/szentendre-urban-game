@@ -1,7 +1,6 @@
 import {
   useCallback,
   useEffect,
-  useMemo,
   useState,
   type ChangeEvent,
   type JSX
@@ -12,12 +11,47 @@ import type { RouteOverview } from "@/application/use-cases/list-routes.use-case
 import { useLanguage } from "@/presentation/app/LanguageContext";
 import { QrScannerPanel } from "@/presentation/components/quest/QrScannerPanel";
 import { useAppServices } from "@/presentation/hooks/useAppServices";
+import type { TranslationKey } from "@/presentation/i18n/translations";
 import {
   DEFAULT_PLAYER_ALIAS,
   PLAYER_ALIAS_STORAGE_KEY
 } from "@/shared/constants/app.constants";
 import { toRouteLocationPath } from "@/shared/config/routes";
 import { parseRouteLocationPayload } from "@/shared/utils/validation-guard";
+
+interface LocalizedRouteDisplay {
+  readonly name: string;
+  readonly description: string;
+}
+
+function localizeRouteDisplay(
+  route: RouteOverview,
+  fallbackDescription: string,
+  t: (key: TranslationKey) => string
+): LocalizedRouteDisplay {
+  switch (route.slug) {
+    case "short":
+      return {
+        name: t("home.route.short.name"),
+        description: t("home.route.short.description")
+      };
+    case "medium":
+      return {
+        name: t("home.route.medium.name"),
+        description: t("home.route.medium.description")
+      };
+    case "long":
+      return {
+        name: t("home.route.long.name"),
+        description: t("home.route.long.description")
+      };
+    default:
+      return {
+        name: route.name,
+        description: route.description ?? fallbackDescription
+      };
+  }
+}
 
 function getStoredAlias(): string {
   if (typeof window === "undefined") {
@@ -48,7 +82,6 @@ function HomePage(): JSX.Element {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [playerAlias, setPlayerAlias] = useState<string>(getStoredAlias());
-  const [qrPayload, setQrPayload] = useState<string>("");
   const [isScannerVisible, setIsScannerVisible] = useState<boolean>(false);
 
   useEffect(() => {
@@ -97,9 +130,10 @@ function HomePage(): JSX.Element {
   const startRoute = (route: RouteOverview): void => {
     const routeStartLocationSlug: string | null = route.firstLocationSlug;
     if (routeStartLocationSlug === null) {
+      const routeDisplay = localizeRouteDisplay(route, t("home.defaultRouteDescription"), t);
       setErrorMessage(
         t("home.routeMissingFirstLocation", {
-          routeName: route.name
+          routeName: routeDisplay.name
         })
       );
       return;
@@ -116,11 +150,6 @@ function HomePage(): JSX.Element {
 
     navigate(toRouteLocationPath(route.slug, routeStartLocationSlug));
   };
-
-  const parsedQrPayload = useMemo(
-    () => parseRouteLocationPayload(qrPayload),
-    [qrPayload]
-  );
 
   const continueWithQrPayload = useCallback(
     (payload: string): void => {
@@ -168,24 +197,30 @@ function HomePage(): JSX.Element {
           </p>
         ) : null}
         <div className="route-grid">
-          {routes.map((route: RouteOverview): JSX.Element => (
-            <article key={route.id} className="route-card">
-              <h3 className="route-title">{route.name}</h3>
-              <p className="route-copy">
-                {route.description ?? t("home.defaultRouteDescription")}
-              </p>
-              <button
-                className="quest-button"
-                type="button"
-                onClick={(): void => {
-                  startRoute(route);
-                }}
-                disabled={route.firstLocationSlug === null}
-              >
-                {t("home.startRoute")}
-              </button>
-            </article>
-          ))}
+          {routes.map((route: RouteOverview): JSX.Element => {
+            const routeDisplay = localizeRouteDisplay(
+              route,
+              t("home.defaultRouteDescription"),
+              t
+            );
+
+            return (
+              <article key={route.id} className="route-card">
+                <h3 className="route-title">{routeDisplay.name}</h3>
+                <p className="route-copy">{routeDisplay.description}</p>
+                <button
+                  className="quest-button"
+                  type="button"
+                  onClick={(): void => {
+                    startRoute(route);
+                  }}
+                  disabled={route.firstLocationSlug === null}
+                >
+                  {t("home.startRoute")}
+                </button>
+              </article>
+            );
+          })}
         </div>
       </section>
 
@@ -211,7 +246,6 @@ function HomePage(): JSX.Element {
             setIsScannerVisible(false);
           }}
           onDetected={(payload: string): void => {
-            setQrPayload(payload);
             setIsScannerVisible(false);
             continueWithQrPayload(payload);
           }}
@@ -219,28 +253,6 @@ function HomePage(): JSX.Element {
             setErrorMessage(message);
           }}
         />
-
-        <label className="quest-field">
-          <span className="quest-field-label">{t("home.pasteQrPayloadLabel")}</span>
-          <input
-            className="quest-input"
-            value={qrPayload}
-            onChange={(event: ChangeEvent<HTMLInputElement>): void => {
-              setQrPayload(event.target.value);
-            }}
-            placeholder={t("home.qrPayloadPlaceholder")}
-          />
-        </label>
-        <button
-          className="quest-button"
-          type="button"
-          onClick={(): void => {
-            continueWithQrPayload(qrPayload);
-          }}
-          disabled={parsedQrPayload === null}
-        >
-          {t("home.continue")}
-        </button>
       </section>
     </main>
   );
