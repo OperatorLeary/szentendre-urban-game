@@ -13,6 +13,11 @@ export function toLocationEntity(
   sequenceIndex: number
 ): Location {
   try {
+    const expectedAnswers: readonly string[] =
+      row.expected_answers === null || row.expected_answers.length === 0
+        ? [row.expected_answer]
+        : row.expected_answers;
+
     return new Location({
       id: toLocationId(row.id),
       slug: row.slug,
@@ -25,7 +30,7 @@ export function toLocationEntity(
       sequenceNumber: sequenceIndex,
       qrToken: QrToken.create(row.qr_code_value),
       questionPrompt: row.question_prompt,
-      expectedAnswer: row.expected_answer,
+      expectedAnswers,
       isActive: row.is_active,
       createdAt: parseIsoDate(row.created_at, "LocationMapper", "locations.created_at"),
       updatedAt: parseIsoDate(row.updated_at, "LocationMapper", "locations.updated_at")
