@@ -1,3 +1,11 @@
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[];
+
 export interface Database {
   public: {
     Tables: {
@@ -29,6 +37,7 @@ export interface Database {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [];
       };
       locations: {
         Row: {
@@ -76,6 +85,7 @@ export interface Database {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [];
       };
       route_locations: {
         Row: {
@@ -102,6 +112,22 @@ export interface Database {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: "route_locations_route_id_fkey";
+            columns: ["route_id"];
+            isOneToOne: false;
+            referencedRelation: "routes";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "route_locations_location_id_fkey";
+            columns: ["location_id"];
+            isOneToOne: false;
+            referencedRelation: "locations";
+            referencedColumns: ["id"];
+          }
+        ];
       };
       runs: {
         Row: {
@@ -143,6 +169,22 @@ export interface Database {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: "runs_route_id_fkey";
+            columns: ["route_id"];
+            isOneToOne: false;
+            referencedRelation: "routes";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "runs_start_location_id_fkey";
+            columns: ["start_location_id"];
+            isOneToOne: false;
+            referencedRelation: "locations";
+            referencedColumns: ["id"];
+          }
+        ];
       };
       checkins: {
         Row: {
@@ -196,6 +238,29 @@ export interface Database {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: "checkins_run_id_fkey";
+            columns: ["run_id"];
+            isOneToOne: false;
+            referencedRelation: "runs";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "checkins_route_id_fkey";
+            columns: ["route_id"];
+            isOneToOne: false;
+            referencedRelation: "routes";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "checkins_location_id_fkey";
+            columns: ["location_id"];
+            isOneToOne: false;
+            referencedRelation: "locations";
+            referencedColumns: ["id"];
+          }
+        ];
       };
       bug_reports: {
         Row: {
@@ -234,12 +299,31 @@ export interface Database {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: "bug_reports_run_id_fkey";
+            columns: ["run_id"];
+            isOneToOne: false;
+            referencedRelation: "runs";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "bug_reports_location_id_fkey";
+            columns: ["location_id"];
+            isOneToOne: false;
+            referencedRelation: "locations";
+            referencedColumns: ["id"];
+          }
+        ];
       };
     };
+    Views: Record<string, never>;
+    Functions: Record<string, never>;
     Enums: {
       run_status: "active" | "completed" | "abandoned";
       validation_type: "gps" | "qr_override";
     };
+    CompositeTypes: Record<string, never>;
   };
 }
 

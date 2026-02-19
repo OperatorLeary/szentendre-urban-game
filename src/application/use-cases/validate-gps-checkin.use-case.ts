@@ -97,15 +97,19 @@ export class ValidateGpsCheckinUseCase
       };
     }
 
-    const gpsValidationInput: GpsValidationInput = {
-      currentPosition: request.currentPosition,
-      targetPosition: location.position,
-      allowedRadiusMeters: location.validationRadiusMeters
-    };
-
-    if (request.horizontalAccuracyMeters !== undefined) {
-      gpsValidationInput.horizontalAccuracyMeters = request.horizontalAccuracyMeters;
-    }
+    const gpsValidationInput: GpsValidationInput =
+      request.horizontalAccuracyMeters === undefined
+        ? {
+            currentPosition: request.currentPosition,
+            targetPosition: location.position,
+            allowedRadiusMeters: location.validationRadiusMeters
+          }
+        : {
+            currentPosition: request.currentPosition,
+            targetPosition: location.position,
+            allowedRadiusMeters: location.validationRadiusMeters,
+            horizontalAccuracyMeters: request.horizontalAccuracyMeters
+          };
 
     const gpsValidation =
       this.dependencies.gpsValidationService.validate(gpsValidationInput);
