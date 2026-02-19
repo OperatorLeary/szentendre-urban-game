@@ -1,5 +1,7 @@
 import { useEffect, useRef, type JSX } from "react";
 
+import { useLanguage } from "@/presentation/app/LanguageContext";
+
 interface QrScannerPanelProps {
   readonly isActive: boolean;
   readonly onDetected: (payload: string) => void;
@@ -15,6 +17,7 @@ export function QrScannerPanel({
   onDetected,
   onError
 }: QrScannerPanelProps): JSX.Element | null {
+  const { t } = useLanguage();
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
   useEffect((): (() => void) | void => {
@@ -58,7 +61,7 @@ export function QrScannerPanel({
           }
         )) as ReaderControls;
       } catch (error) {
-        onError(error instanceof Error ? error.message : "Unable to start QR scanner.");
+        onError(error instanceof Error ? error.message : t("qrScanner.startFailed"));
       }
     };
 
@@ -68,7 +71,7 @@ export function QrScannerPanel({
       isCancelled = true;
       controls?.stop();
     };
-  }, [isActive, onDetected, onError]);
+  }, [isActive, onDetected, onError, t]);
 
   if (!isActive) {
     return null;

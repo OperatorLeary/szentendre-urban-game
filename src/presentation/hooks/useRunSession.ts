@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { EnsureRunSessionResponse } from "@/application/use-cases/ensure-run-session.use-case";
 import { AppError } from "@/core/errors/app-error";
 import type { GameSessionSnapshot } from "@/core/models/game-session.model";
+import { useLanguage } from "@/presentation/app/LanguageContext";
 import { useAppServices } from "@/presentation/hooks/useAppServices";
 import {
   DEFAULT_PLAYER_ALIAS,
@@ -53,6 +54,7 @@ function getStoredPlayerAlias(): string {
 }
 
 export function useRunSession(input: UseRunSessionInput): UseRunSessionResult {
+  const { t } = useLanguage();
   const { gameUseCases } = useAppServices();
   const [state, setState] = useState<UseRunSessionState>(INITIAL_STATE);
 
@@ -84,7 +86,7 @@ export function useRunSession(input: UseRunSessionInput): UseRunSessionResult {
         errorContext: null
       });
     } catch (error) {
-      const fallbackMessage = "Unable to load run session.";
+      const fallbackMessage = t("runSession.loadFailed");
       const message: string =
         error instanceof Error && error.message.trim().length > 0
           ? error.message
@@ -99,7 +101,7 @@ export function useRunSession(input: UseRunSessionInput): UseRunSessionResult {
         errorContext
       });
     }
-  }, [gameUseCases, input.enabled, input.locationSlug, input.routeSlug]);
+  }, [gameUseCases, input.enabled, input.locationSlug, input.routeSlug, t]);
 
   const setSession = useCallback((session: GameSessionSnapshot): void => {
     setState((previousState: UseRunSessionState): UseRunSessionState => {

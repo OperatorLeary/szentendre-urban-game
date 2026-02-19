@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react";
 
 import { toBugReportId, toLocationId, toRunId } from "@/core/types/identifiers.type";
+import { useLanguage } from "@/presentation/app/LanguageContext";
 import { useAppServices } from "@/presentation/hooks/useAppServices";
 
 function generateIdentifier(): string {
@@ -31,6 +32,7 @@ interface UseBugReportResult {
 }
 
 export function useBugReport(): UseBugReportResult {
+  const { t } = useLanguage();
   const { gameUseCases } = useAppServices();
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -69,14 +71,14 @@ export function useBugReport(): UseBugReportResult {
         return true;
       } catch (error) {
         setErrorMessage(
-          error instanceof Error ? error.message : "Failed to submit bug report."
+          error instanceof Error ? error.message : t("bugReport.submitFailed")
         );
         return false;
       } finally {
         setIsSubmitting(false);
       }
     },
-    [gameUseCases]
+    [gameUseCases, t]
   );
 
   const resetStatus = useCallback((): void => {

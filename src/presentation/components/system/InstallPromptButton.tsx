@@ -1,5 +1,7 @@
 import { useEffect, useState, type JSX } from "react";
 
+import { useLanguage } from "@/presentation/app/LanguageContext";
+
 interface BeforeInstallPromptEvent extends Event {
   readonly platforms: readonly string[];
   prompt(): Promise<void>;
@@ -10,6 +12,7 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 export function InstallPromptButton(): JSX.Element | null {
+  const { t } = useLanguage();
   const [installEvent, setInstallEvent] = useState<BeforeInstallPromptEvent | null>(
     null
   );
@@ -41,7 +44,7 @@ export function InstallPromptButton(): JSX.Element | null {
         setInstallEvent(null);
       }}
     >
-      Install App
+      {t("install.button")}
     </button>
   );
 }

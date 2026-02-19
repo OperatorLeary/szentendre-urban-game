@@ -1,9 +1,11 @@
 import { useState, type FormEvent, type JSX } from "react";
 
+import { useLanguage } from "@/presentation/app/LanguageContext";
 import { useBugReport } from "@/presentation/hooks/useBugReport";
 import { useQuestRuntime } from "@/presentation/hooks/useQuestRuntime";
 
 export function BugReportFloatingButton(): JSX.Element {
+  const { t } = useLanguage();
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [description, setDescription] = useState<string>("");
   const { state } = useQuestRuntime();
@@ -29,16 +31,15 @@ export function BugReportFloatingButton(): JSX.Element {
           setIsOpen((isCurrentlyOpen: boolean): boolean => !isCurrentlyOpen);
         }}
       >
-        Report Bug
+        {t("bugReport.fabLabel")}
       </button>
 
       {isOpen ? (
         <section className="bug-report-modal" aria-modal="true" role="dialog">
           <form className="bug-report-form" onSubmit={submitBugReport}>
-            <h2 className="bug-report-title">Report an issue</h2>
+            <h2 className="bug-report-title">{t("bugReport.title")}</h2>
             <p className="bug-report-copy">
-              Share what happened. Telemetry (run/location/GPS) will be attached when
-              available.
+              {t("bugReport.copy")}
             </p>
             <textarea
               className="bug-report-textarea"
@@ -49,7 +50,7 @@ export function BugReportFloatingButton(): JSX.Element {
               minLength={10}
               maxLength={3000}
               required
-              placeholder="Describe the problem..."
+              placeholder={t("bugReport.placeholder")}
             />
             {bugReport.errorMessage !== null ? (
               <p className="bug-report-error" role="alert">
@@ -64,14 +65,14 @@ export function BugReportFloatingButton(): JSX.Element {
                   setIsOpen(false);
                 }}
               >
-                Cancel
+                {t("bugReport.cancel")}
               </button>
               <button
                 className="quest-button"
                 type="submit"
                 disabled={bugReport.isSubmitting}
               >
-                {bugReport.isSubmitting ? "Sending..." : "Submit"}
+                {bugReport.isSubmitting ? t("bugReport.sending") : t("bugReport.submit")}
               </button>
             </div>
           </form>

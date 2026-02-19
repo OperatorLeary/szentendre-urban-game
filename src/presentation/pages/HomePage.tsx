@@ -9,10 +9,10 @@ import {
 import { useNavigate } from "react-router-dom";
 
 import type { RouteOverview } from "@/application/use-cases/list-routes.use-case";
+import { useLanguage } from "@/presentation/app/LanguageContext";
 import { QrScannerPanel } from "@/presentation/components/quest/QrScannerPanel";
 import { useAppServices } from "@/presentation/hooks/useAppServices";
 import {
-  APP_NAME,
   DEFAULT_PLAYER_ALIAS,
   PLAYER_ALIAS_STORAGE_KEY
 } from "@/shared/constants/app.constants";
@@ -41,6 +41,7 @@ function setStoredAlias(alias: string): void {
 }
 
 function HomePage(): JSX.Element {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const { gameUseCases, logger } = useAppServices();
   const [routes, setRoutes] = useState<readonly RouteOverview[]>([]);
@@ -76,7 +77,7 @@ function HomePage(): JSX.Element {
       } catch (error) {
         if (!isCancelled) {
           setErrorMessage(
-            error instanceof Error ? error.message : "Failed to load routes."
+            error instanceof Error ? error.message : t("home.failedToLoadRoutes")
           );
         }
       } finally {
@@ -91,12 +92,16 @@ function HomePage(): JSX.Element {
     return (): void => {
       isCancelled = true;
     };
-  }, [gameUseCases]);
+  }, [gameUseCases, t]);
 
   const startRoute = (route: RouteOverview): void => {
     const routeStartLocationSlug: string | null = route.firstLocationSlug;
     if (routeStartLocationSlug === null) {
-      setErrorMessage(`Route "${route.name}" has no active locations configured.`);
+      setErrorMessage(
+        t("home.routeMissingFirstLocation", {
+          routeName: route.name
+        })
+      );
       return;
     }
 
@@ -121,27 +126,24 @@ function HomePage(): JSX.Element {
     (payload: string): void => {
       const parsedPayload = parseRouteLocationPayload(payload);
       if (parsedPayload === null) {
-        setErrorMessage("QR payload must contain /r/{routeSlug}/l/{locationSlug}.");
+        setErrorMessage(t("home.qrPayloadInvalid"));
         return;
       }
 
       setStoredAlias(playerAlias);
       navigate(toRouteLocationPath(parsedPayload.routeSlug, parsedPayload.locationSlug));
     },
-    [navigate, playerAlias]
+    [navigate, playerAlias, t]
   );
 
   return (
     <main className="quest-shell">
       <section className="quest-hero-card">
-        <h1 className="quest-hero-title">{APP_NAME}</h1>
-        <p className="quest-hero-copy">
-          Pick a route or paste a station QR link to start. One active run is enforced
-          per device.
-        </p>
+        <h1 className="quest-hero-title">{t("app.name")}</h1>
+        <p className="quest-hero-copy">{t("home.heroCopy")}</p>
 
         <label className="quest-field">
-          <span className="quest-field-label">Player alias</span>
+          <span className="quest-field-label">{t("home.playerAliasLabel")}</span>
           <input
             className="quest-input"
             value={playerAlias}
@@ -158,8 +160,8 @@ function HomePage(): JSX.Element {
       </section>
 
       <section className="quest-panel">
-        <h2 className="quest-panel-title">Routes</h2>
-        {isLoading ? <p className="quest-muted">Loading routes...</p> : null}
+        <h2 className="quest-panel-title">{t("home.routesTitle")}</h2>
+        {isLoading ? <p className="quest-muted">{t("home.loadingRoutes")}</p> : null}
         {errorMessage !== null ? (
           <p className="quest-error" role="alert">
             {errorMessage}
@@ -170,7 +172,7 @@ function HomePage(): JSX.Element {
             <article key={route.id} className="route-card">
               <h3 className="route-title">{route.name}</h3>
               <p className="route-copy">
-                {route.description ?? "Guided station route through Szentendre."}
+                {route.description ?? t("home.defaultRouteDescription")}
               </p>
               <button
                 className="quest-button"
@@ -180,7 +182,7 @@ function HomePage(): JSX.Element {
                 }}
                 disabled={route.firstLocationSlug === null}
               >
-                Start route
+                {t("home.startRoute")}
               </button>
             </article>
           ))}
@@ -188,7 +190,7 @@ function HomePage(): JSX.Element {
       </section>
 
       <section className="quest-panel">
-        <h2 className="quest-panel-title">Start from QR link</h2>
+        <h2 className="quest-panel-title">{t("home.qrStartTitle")}</h2>
         <div className="quest-actions">
           <button
             className="quest-button quest-button--ghost"
@@ -197,7 +199,9 @@ function HomePage(): JSX.Element {
               setIsScannerVisible((isVisible: boolean): boolean => !isVisible);
             }}
           >
-            {isScannerVisible ? "Hide camera scanner" : "Scan QR with camera"}
+            {isScannerVisible
+              ? t("home.hideCameraScanner")
+              : t("home.scanQrWithCamera")}
           </button>
         </div>
 
@@ -214,14 +218,14 @@ function HomePage(): JSX.Element {
         />
 
         <label className="quest-field">
-          <span className="quest-field-label">Paste QR payload</span>
+          <span className="quest-field-label">{t("home.pasteQrPayloadLabel")}</span>
           <input
             className="quest-input"
             value={qrPayload}
             onChange={(event: ChangeEvent<HTMLInputElement>): void => {
               setQrPayload(event.target.value);
             }}
-            placeholder="https://yourdomain.com/r/short/l/main-square"
+            placeholder={t("home.qrPayloadPlaceholder")}
           />
         </label>
         <button
@@ -232,7 +236,7 @@ function HomePage(): JSX.Element {
           }}
           disabled={parsedQrPayload === null}
         >
-          Continue
+          {t("home.continue")}
         </button>
       </section>
     </main>

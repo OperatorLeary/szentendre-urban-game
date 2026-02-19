@@ -199,6 +199,46 @@ body {
   text-decoration: underline;
 }
 
+.language-switcher {
+  position: fixed;
+  top: max(0.7rem, env(safe-area-inset-top));
+  right: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  border: 1px solid #cfd9e4;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 0.75rem;
+  padding: 0.3rem 0.35rem;
+  z-index: 1200;
+  box-shadow: 0 8px 20px rgba(17, 39, 59, 0.12);
+}
+
+.language-switcher-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #2b3f55;
+  padding-left: 0.2rem;
+}
+
+.language-switcher-button {
+  border: 1px solid #bfd0e1;
+  background: #f5f9fd;
+  color: #244664;
+  border-radius: 0.5rem;
+  min-width: 2.2rem;
+  height: 2rem;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.language-switcher-button--active {
+  background: #0a84ff;
+  border-color: #0a84ff;
+  color: #fff;
+}
+
 .bug-report-fab,
 .install-button {
   position: fixed;
