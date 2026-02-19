@@ -342,6 +342,9 @@ function QuestLocationPage(): JSX.Element {
 
         <QrScannerPanel
           isActive={isScannerVisible}
+          onClose={(): void => {
+            setIsScannerVisible(false);
+          }}
           onDetected={(payload: string): void => {
             setQrPayload(payload);
             setIsScannerVisible(false);

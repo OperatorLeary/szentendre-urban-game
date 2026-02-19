@@ -2,7 +2,7 @@
 
 Generated from `supabase/migrations/202602190002_phase5_seed_routes.sql`.
 
-Mode: Relative payload mode (values from DB `qr_code_value`)
+Mode: Full URL mode (`--base-url https://szentendre-urban-game.pages.dev/`)
 
 ## Files
 - `svg/*.svg`: vector QR assets
