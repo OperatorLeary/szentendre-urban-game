@@ -4,11 +4,13 @@ import type { CheckinRepositoryPort } from "@/application/ports/checkin-reposito
 import type { ClockPort } from "@/application/ports/clock.port";
 import type { LocationRepositoryPort } from "@/application/ports/location-repository.port";
 import type { LoggerPort } from "@/application/ports/logger.port";
+import type { RouteRepositoryPort } from "@/application/ports/route-repository.port";
 import type { RunRepositoryPort } from "@/application/ports/run-repository.port";
 import { CheckinContextLoaderService } from "@/application/services/checkin-context-loader.service";
 import {
+  EnsureRunSessionUseCase,
   GetRunProgressUseCase,
-  StartRunUseCase,
+  ListRoutesUseCase,
   SubmitBugReportUseCase,
   ValidateGpsCheckinUseCase,
   ValidateQrCheckinUseCase
@@ -24,6 +26,7 @@ interface CreateGameUseCasesInput {
   readonly clock: ClockPort;
   readonly repositories: {
     readonly runRepository: RunRepositoryPort;
+    readonly routeRepository: RouteRepositoryPort;
     readonly locationRepository: LocationRepositoryPort;
     readonly checkinRepository: CheckinRepositoryPort;
     readonly bugReportRepository: BugReportRepositoryPort;
@@ -46,8 +49,16 @@ export function createGameUseCases(
     checkinRepository: input.repositories.checkinRepository
   });
 
-  const startRunUseCase = new StartRunUseCase({
+  const listRoutesUseCase = new ListRoutesUseCase({
+    routeRepository: input.repositories.routeRepository,
+    locationRepository: input.repositories.locationRepository
+  });
+  const ensureRunSessionUseCase = new EnsureRunSessionUseCase({
     runRepository: input.repositories.runRepository,
+    routeRepository: input.repositories.routeRepository,
+    locationRepository: input.repositories.locationRepository,
+    checkinRepository: input.repositories.checkinRepository,
+    gameSessionService,
     logger: input.logger,
     clock: input.clock
   });
@@ -84,8 +95,11 @@ export function createGameUseCases(
   });
 
   return {
-    async startRun(request) {
-      return startRunUseCase.execute(request);
+    async listRoutes() {
+      return listRoutesUseCase.execute({});
+    },
+    async ensureRunSession(request) {
+      return ensureRunSessionUseCase.execute(request);
     },
     async getRunProgress(request) {
       return getRunProgressUseCase.execute(request);

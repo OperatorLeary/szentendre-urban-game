@@ -1,9 +1,14 @@
+@import "leaflet/dist/leaflet.css";
+
 :root {
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-  line-height: 1.5;
+  font-family: "IBM Plex Sans", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  line-height: 1.45;
   font-weight: 400;
-  color: #101010;
-  background: linear-gradient(180deg, #fff5e9 0%, #e7f3ff 100%);
+  color: #13212f;
+  background:
+    radial-gradient(circle at 20% 0%, #d5f0ff 0%, transparent 40%),
+    radial-gradient(circle at 100% 0%, #ffeccf 0%, transparent 42%),
+    #f3f7fb;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -27,37 +32,223 @@ body {
   min-height: 100vh;
 }
 
-.app-shell {
+.quest-shell {
+  width: min(70rem, 100%);
+  margin: 0 auto;
+  padding: 1rem 1rem 6rem;
   display: grid;
-  place-items: center;
-  min-height: 100vh;
-  padding: 2rem;
+  gap: 1rem;
 }
 
-.app-card {
-  width: min(42rem, 100%);
-  background: rgba(255, 255, 255, 0.9);
-  border: 1px solid #dce7f3;
+.quest-hero-card,
+.quest-panel {
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid #d6e1ec;
   border-radius: 1rem;
-  padding: 2rem;
-  box-shadow: 0 20px 40px rgba(32, 57, 83, 0.14);
+  padding: 1rem;
+  box-shadow: 0 8px 30px rgba(26, 52, 78, 0.08);
 }
 
-.app-title {
+.quest-hero-title {
   margin: 0;
-  font-size: clamp(1.8rem, 2.4vw, 2.4rem);
+  font-size: clamp(1.8rem, 4vw, 2.5rem);
+  letter-spacing: -0.02em;
 }
 
-.app-copy {
-  margin: 1rem 0 0;
-  color: #3c4a58;
+.quest-panel-title {
+  margin: 0;
+  font-size: clamp(1.2rem, 2.6vw, 1.6rem);
+  letter-spacing: -0.01em;
+}
+
+.quest-hero-copy,
+.quest-copy,
+.quest-muted {
+  margin: 0.6rem 0 0;
+  color: #3a4a5c;
+}
+
+.quest-field {
+  display: grid;
+  gap: 0.35rem;
+  margin-top: 0.9rem;
+}
+
+.quest-field-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #2c3e51;
+}
+
+.quest-input,
+.bug-report-textarea {
+  width: 100%;
+  border: 1px solid #b8c8d8;
+  border-radius: 0.75rem;
+  padding: 0.65rem 0.8rem;
+  font: inherit;
+  color: inherit;
+  background: #fff;
+}
+
+.bug-report-textarea {
+  min-height: 9rem;
+  resize: vertical;
+}
+
+.quest-input:focus-visible,
+.bug-report-textarea:focus-visible {
+  outline: 2px solid #0a84ff;
+  outline-offset: 1px;
+}
+
+.quest-actions,
+.bug-report-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 0.9rem;
+}
+
+.quest-button {
+  border: 1px solid #0a84ff;
+  background: #0a84ff;
+  color: #fff;
+  border-radius: 0.75rem;
+  padding: 0.55rem 0.9rem;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.quest-button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.quest-button--ghost {
+  background: transparent;
+  color: #0a4f97;
+}
+
+.route-grid {
+  margin-top: 0.9rem;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.route-card {
+  padding: 0.85rem;
+  border: 1px solid #d4dfeb;
+  border-radius: 0.85rem;
+  background: rgba(243, 250, 255, 0.7);
+}
+
+.route-title {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.route-copy {
+  margin: 0.45rem 0 0.8rem;
+  color: #45586a;
+}
+
+.quest-map {
+  width: 100%;
+  min-height: 18rem;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  border: 1px solid #cedbe7;
+}
+
+.qr-scanner-panel {
+  margin-top: 0.9rem;
+}
+
+.qr-scanner-video {
+  width: 100%;
+  border-radius: 0.75rem;
+  border: 1px solid #cad8e5;
+  background: #101821;
+  min-height: 12rem;
+}
+
+.quest-feedback {
+  margin-top: 0.85rem;
+  color: #0e4f8d;
+  font-weight: 600;
+}
+
+.quest-error,
+.bug-report-error {
+  margin-top: 0.8rem;
+  color: #aa2020;
+  font-weight: 600;
 }
 
 .app-link {
   display: inline-block;
-  margin-top: 1.25rem;
+  margin-top: 0.75rem;
   color: #0b4d8d;
   font-weight: 600;
+  text-decoration: none;
+}
+
+.app-link:hover {
+  text-decoration: underline;
+}
+
+.bug-report-fab,
+.install-button {
+  position: fixed;
+  right: 1rem;
+  border: 1px solid #0a84ff;
+  background: #0a84ff;
+  color: #fff;
+  border-radius: 2rem;
+  padding: 0.55rem 0.95rem;
+  font: inherit;
+  font-weight: 600;
+  z-index: 1000;
+  cursor: pointer;
+}
+
+.bug-report-fab {
+  bottom: 1rem;
+}
+
+.install-button {
+  bottom: 4.4rem;
+  background: #0f8452;
+  border-color: #0f8452;
+}
+
+.bug-report-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(16, 24, 36, 0.5);
+  display: grid;
+  place-items: end center;
+  z-index: 1100;
+  padding: 1rem;
+}
+
+.bug-report-form {
+  width: min(32rem, 100%);
+  border: 1px solid #d4dfeb;
+  border-radius: 1rem;
+  background: #fff;
+  padding: 1rem;
+}
+
+.bug-report-title {
+  margin: 0;
+}
+
+.bug-report-copy {
+  margin: 0.6rem 0 0;
+  color: #425569;
 }
 
 .system-message {
@@ -70,4 +261,19 @@ body {
 
 .system-message--error {
   color: #7d1010;
+}
+
+@media (min-width: 48rem) {
+  .quest-shell {
+    padding: 1.4rem 1.4rem 7rem;
+  }
+
+  .route-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .quest-panel,
+  .quest-hero-card {
+    padding: 1.25rem;
+  }
 }

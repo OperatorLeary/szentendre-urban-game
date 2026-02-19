@@ -28,25 +28,37 @@ export class GameSessionService {
   public buildSnapshot(input: GameSessionInput): GameSessionSnapshot {
     const orderedActiveLocations: readonly Location[] =
       this.getOrderedActiveLocations(input.locations);
+    const startSequenceIndex: number = this.resolveStartSequenceIndex(
+      input.run.startLocationId,
+      orderedActiveLocations
+    );
+    const routeTrackLocations: readonly Location[] = orderedActiveLocations.filter(
+      (location: Location): boolean => location.sequenceNumber >= startSequenceIndex
+    );
     const completedLocationIdSet: Set<LocationId> = this.getCompletedLocationIdSet(
       input.run.id,
       input.checkins
     );
-    const completedLocationIds: readonly LocationId[] = orderedActiveLocations
+    const completedLocationIds: readonly LocationId[] = routeTrackLocations
       .filter((location: Location): boolean => completedLocationIdSet.has(location.id))
       .map((location: Location): LocationId => location.id);
     const nextLocation: Location | null =
-      orderedActiveLocations.find(
-        (location: Location): boolean => !completedLocationIdSet.has(location.id)
+      routeTrackLocations.find(
+        (location: Location): boolean =>
+          location.sequenceNumber >= input.run.currentSequenceIndex &&
+          !completedLocationIdSet.has(location.id)
       ) ?? null;
+
     const progress = this.progressTrackingService.calculate(
-      orderedActiveLocations.length,
+      routeTrackLocations.length,
       completedLocationIds.length
     );
 
     return {
       runId: input.run.id,
       runStatus: input.run.status,
+      startSequenceIndex,
+      currentSequenceIndex: input.run.currentSequenceIndex,
       totalLocations: progress.totalSteps,
       completedLocations: progress.completedSteps,
       completedLocationIds,
@@ -54,7 +66,8 @@ export class GameSessionService {
       completionRatio: progress.completionRatio,
       completionPercentage: progress.completionPercentage,
       isCompleted:
-        input.run.status === RunStatus.Completed || progress.isCompleted
+        input.run.status === RunStatus.Completed ||
+        (progress.isCompleted && nextLocation === null)
     };
   }
 
@@ -87,13 +100,7 @@ export class GameSessionService {
       };
     }
 
-    const sessionSnapshot: GameSessionSnapshot = this.buildSnapshot({
-      run: input.run,
-      locations: input.locations,
-      checkins: input.checkins
-    });
-
-    if (sessionSnapshot.nextLocation?.id !== input.targetLocation.id) {
+    if (input.targetLocation.sequenceNumber !== input.run.currentSequenceIndex) {
       return {
         isAllowed: false,
         reason: "out_of_order"
@@ -121,5 +128,20 @@ export class GameSessionService {
       .map((checkin: Checkin): LocationId => checkin.locationId);
 
     return new Set<LocationId>(completedLocationIds);
+  }
+
+  private resolveStartSequenceIndex(
+    startLocationId: LocationId | null,
+    orderedActiveLocations: readonly Location[]
+  ): number {
+    if (startLocationId === null) {
+      return orderedActiveLocations[0]?.sequenceNumber ?? 1;
+    }
+
+    return (
+      orderedActiveLocations.find(
+        (location: Location): boolean => location.id === startLocationId
+      )?.sequenceNumber ?? orderedActiveLocations[0]?.sequenceNumber ?? 1
+    );
   }
 }

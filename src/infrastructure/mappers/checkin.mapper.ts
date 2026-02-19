@@ -15,7 +15,6 @@ type CheckinInsert = Tables["checkins"]["Insert"];
 
 export interface CheckinWriteContext {
   readonly routeId: string;
-  readonly sequenceIndex: number;
 }
 
 export function toCheckinEntity(row: CheckinRow): Checkin {
@@ -24,11 +23,16 @@ export function toCheckinEntity(row: CheckinRow): Checkin {
       id: toCheckinId(row.id),
       runId: toRunId(row.run_id),
       locationId: toLocationId(row.location_id),
+      sequenceIndex: row.sequence_index,
       method: toCheckinMethod(row.validation_type),
       validatedAt: parseIsoDate(row.validated_at, "CheckinMapper", "checkins.validated_at"),
+      gpsLatitude: row.gps_lat,
+      gpsLongitude: row.gps_lng,
       distanceMeters: row.detected_distance_m,
       scannedQrToken:
-        row.scanned_qr_token === null ? null : QrToken.create(row.scanned_qr_token)
+        row.scanned_qr_token === null ? null : QrToken.create(row.scanned_qr_token),
+      answerText: row.answer_text ?? "n/a",
+      isAnswerCorrect: row.is_answer_correct ?? false
     });
   } catch (error) {
     throw new RepositoryError(
@@ -54,13 +58,15 @@ export function toCheckinInsert(
     run_id: entity.runId,
     route_id: context.routeId,
     location_id: entity.locationId,
-    sequence_index: context.sequenceIndex,
+    sequence_index: entity.sequenceIndex,
     validation_type: fromCheckinMethod(entity.method),
     validated_at: entity.validatedAt.toISOString(),
-    gps_lat: null,
-    gps_lng: null,
+    gps_lat: entity.gpsLatitude,
+    gps_lng: entity.gpsLongitude,
     detected_distance_m: entity.distanceMeters,
-    scanned_qr_token: entity.scannedQrToken?.toString() ?? null
+    scanned_qr_token: entity.scannedQrToken?.toString() ?? null,
+    answer_text: entity.answerText,
+    is_answer_correct: entity.isAnswerCorrect
   };
 }
 

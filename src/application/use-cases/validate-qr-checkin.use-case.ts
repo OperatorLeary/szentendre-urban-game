@@ -23,12 +23,15 @@ import { QrToken } from "@/core/value-objects/qr-token.vo";
 type EligibilityFailureReason = Exclude<CheckinEligibilityReason, "allowed">;
 export type ValidateQrCheckinFailureReason =
   | EligibilityFailureReason
-  | QrValidationFailureReason;
+  | QrValidationFailureReason
+  | "incorrect_answer";
 
 export interface ValidateQrCheckinRequest {
   readonly checkinId: CheckinId;
   readonly runId: RunId;
   readonly locationId: LocationId;
+  readonly expectedRouteSlug: string;
+  readonly answerText: string;
   readonly scannedPayload: string;
   readonly validatedAt?: Date;
 }
@@ -87,8 +90,17 @@ export class ValidateQrCheckinUseCase
       };
     }
 
+    if (!location.isAnswerCorrect(request.answerText)) {
+      return {
+        accepted: false,
+        reason: "incorrect_answer"
+      };
+    }
+
     const qrValidation = this.dependencies.qrValidationService.validate({
       expectedToken: location.qrToken,
+      expectedRouteSlug: request.expectedRouteSlug,
+      expectedLocationSlug: location.slug,
       scannedPayload: request.scannedPayload
     });
     if (!qrValidation.isValid) {
@@ -104,16 +116,23 @@ export class ValidateQrCheckinUseCase
       id: request.checkinId,
       runId: run.id,
       locationId: location.id,
+      sequenceIndex: location.sequenceNumber,
       method: CheckinMethod.Qr,
       validatedAt,
+      gpsLatitude: null,
+      gpsLongitude: null,
       distanceMeters: null,
-      scannedQrToken
+      scannedQrToken,
+      answerText: request.answerText,
+      isAnswerCorrect: true
     });
     const persistedCheckin: Checkin =
       await this.dependencies.checkinRepository.create(checkin);
     const checkinsAfterWrite: readonly Checkin[] = [...checkins, persistedCheckin];
 
-    let runAfterCheckin: Run = run;
+    let runAfterCheckin: Run = run.withCurrentSequenceIndex(
+      run.currentSequenceIndex + 1
+    );
     let session: GameSessionSnapshot = this.dependencies.gameSessionService.buildSnapshot(
       {
         run: runAfterCheckin,
@@ -123,15 +142,15 @@ export class ValidateQrCheckinUseCase
     );
 
     if (session.isCompleted && runAfterCheckin.status === RunStatus.Active) {
-      runAfterCheckin = await this.dependencies.runRepository.update(
-        runAfterCheckin.complete(validatedAt)
-      );
-      session = this.dependencies.gameSessionService.buildSnapshot({
-        run: runAfterCheckin,
-        locations,
-        checkins: checkinsAfterWrite
-      });
+      runAfterCheckin = runAfterCheckin.complete(validatedAt);
     }
+
+    runAfterCheckin = await this.dependencies.runRepository.update(runAfterCheckin);
+    session = this.dependencies.gameSessionService.buildSnapshot({
+      run: runAfterCheckin,
+      locations,
+      checkins: checkinsAfterWrite
+    });
 
     this.dependencies.logger.info("QR check-in accepted.", {
       checkinId: persistedCheckin.id,

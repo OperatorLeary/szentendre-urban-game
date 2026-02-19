@@ -3,3 +3,7 @@ export * from "@/shared/config/routes";
 export * from "@/shared/constants/app.constants";
 export * from "@/shared/types/json.type";
 export * from "@/shared/utils/assert";
+export * from "@/shared/utils/format-distance";
+export * from "@/shared/utils/haversine-distance";
+export * from "@/shared/utils/slugify";
+export * from "@/shared/utils/validation-guard";

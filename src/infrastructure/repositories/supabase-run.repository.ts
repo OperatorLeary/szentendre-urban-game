@@ -1,5 +1,5 @@
-import type { RunRepositoryPort } from "@/application/ports/run-repository.port";
 import type { LoggerPort } from "@/application/ports/logger.port";
+import type { RunRepositoryPort } from "@/application/ports/run-repository.port";
 import type { Run } from "@/core/entities/run.entity";
 import type { RunId } from "@/core/types/identifiers.type";
 import { RepositoryError } from "@/infrastructure/errors/repository.error";
@@ -9,18 +9,15 @@ import {
   toRunUpdate
 } from "@/infrastructure/mappers/run.mapper";
 import { DeviceContextProvider } from "@/infrastructure/runtime/device-context.provider";
-import { DefaultRouteResolver } from "@/infrastructure/runtime/default-route-resolver";
-import type { Tables } from "@/infrastructure/supabase/database.types";
-import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Database } from "@/infrastructure/supabase/database.types";
+import type { Database, Tables } from "@/infrastructure/supabase/database.types";
 import { SUPABASE_TABLES } from "@/infrastructure/supabase/supabase-table-names";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 type RunRow = Tables["runs"]["Row"];
 
 export class SupabaseRunRepository implements RunRepositoryPort {
   public constructor(
     private readonly supabase: SupabaseClient<Database>,
-    private readonly defaultRouteResolver: DefaultRouteResolver,
     private readonly deviceContextProvider: DeviceContextProvider,
     private readonly logger: LoggerPort
   ) {}
@@ -55,12 +52,42 @@ export class SupabaseRunRepository implements RunRepositoryPort {
     return toRunEntity(data as RunRow);
   }
 
-  public async create(run: Run): Promise<Run> {
-    const routeId: string = await this.defaultRouteResolver.getDefaultRouteId();
+  public async findActiveForCurrentDevice(): Promise<Run | null> {
     const deviceId: string = this.deviceContextProvider.getDeviceId();
 
+    const { data, error } = await this.supabase
+      .from(SUPABASE_TABLES.runs)
+      .select(
+        "id, route_id, device_id, player_alias, start_location_id, current_sequence_index, status, started_at, completed_at, created_at, updated_at"
+      )
+      .eq("device_id", deviceId)
+      .eq("status", "active")
+      .maybeSingle();
+
+    if (error !== null) {
+      throw new RepositoryError(
+        "Failed to fetch active run for device.",
+        {
+          repository: "SupabaseRunRepository",
+          operation: "findActiveForCurrentDevice",
+          metadata: {
+            deviceId
+          }
+        },
+        error
+      );
+    }
+
+    if (data === null) {
+      return null;
+    }
+
+    return toRunEntity(data as RunRow);
+  }
+
+  public async create(run: Run): Promise<Run> {
+    const deviceId: string = this.deviceContextProvider.getDeviceId();
     const payload = toRunInsert(run, {
-      routeId,
       deviceId
     });
 
@@ -80,7 +107,7 @@ export class SupabaseRunRepository implements RunRepositoryPort {
           operation: "create",
           metadata: {
             runId: run.id,
-            routeId
+            routeId: run.routeId
           }
         },
         error
@@ -89,7 +116,7 @@ export class SupabaseRunRepository implements RunRepositoryPort {
 
     this.logger.debug("Run persisted.", {
       runId: run.id,
-      routeId
+      routeId: run.routeId
     });
 
     return toRunEntity(data as RunRow);

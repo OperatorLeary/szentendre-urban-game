@@ -1,14 +1,12 @@
 import type { LocationRepositoryPort } from "@/application/ports/location-repository.port";
 import type { LoggerPort } from "@/application/ports/logger.port";
 import type { Location } from "@/core/entities/location.entity";
-import type { LocationId } from "@/core/types/identifiers.type";
+import type { LocationId, RouteId } from "@/core/types/identifiers.type";
 import { RepositoryError } from "@/infrastructure/errors/repository.error";
 import { toLocationEntity } from "@/infrastructure/mappers/location.mapper";
-import { DefaultRouteResolver } from "@/infrastructure/runtime/default-route-resolver";
-import type { Tables } from "@/infrastructure/supabase/database.types";
-import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Database } from "@/infrastructure/supabase/database.types";
+import type { Database, Tables } from "@/infrastructure/supabase/database.types";
 import { SUPABASE_TABLES } from "@/infrastructure/supabase/supabase-table-names";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 type RouteLocationRow = Tables["route_locations"]["Row"];
 type LocationRow = Tables["locations"]["Row"];
@@ -16,56 +14,45 @@ type LocationRow = Tables["locations"]["Row"];
 export class SupabaseLocationRepository implements LocationRepositoryPort {
   public constructor(
     private readonly supabase: SupabaseClient<Database>,
-    private readonly defaultRouteResolver: DefaultRouteResolver,
     private readonly logger: LoggerPort
   ) {}
 
-  public async findById(id: LocationId): Promise<Location | null> {
-    const routeId: string = await this.defaultRouteResolver.getDefaultRouteId();
-
-    const { data: routeLocation, error: routeLocationError } = await this.supabase
-      .from(SUPABASE_TABLES.routeLocations)
-      .select("location_id, sequence_index")
-      .eq("route_id", routeId)
-      .eq("location_id", id)
-      .maybeSingle();
-
-    if (routeLocationError !== null) {
-      throw new RepositoryError(
-        "Failed to fetch route location mapping.",
-        {
-          repository: "SupabaseLocationRepository",
-          operation: "findById.routeLocation",
-          metadata: {
-            routeId,
-            locationId: id
-          }
-        },
-        routeLocationError
-      );
-    }
-
+  public async findById(id: LocationId, routeId: RouteId): Promise<Location | null> {
+    const routeLocation = await this.getRouteLocation(routeId, id);
     if (routeLocation === null) {
       return null;
     }
 
+    const locationRow: LocationRow | null = await this.getActiveLocationById(id);
+    if (locationRow === null) {
+      return null;
+    }
+
+    return toLocationEntity(locationRow, routeLocation.sequence_index);
+  }
+
+  public async findBySlug(
+    routeId: RouteId,
+    locationSlug: string
+  ): Promise<Location | null> {
     const { data: locationRow, error: locationError } = await this.supabase
       .from(SUPABASE_TABLES.locations)
       .select(
         "id, slug, name, description, latitude, longitude, radius_m, qr_code_value, question_prompt, expected_answer, is_active, created_at, updated_at"
       )
-      .eq("id", id)
+      .eq("slug", locationSlug)
       .eq("is_active", true)
       .maybeSingle();
 
     if (locationError !== null) {
       throw new RepositoryError(
-        "Failed to fetch location.",
+        "Failed to fetch location by slug.",
         {
           repository: "SupabaseLocationRepository",
-          operation: "findById.location",
+          operation: "findBySlug.location",
           metadata: {
-            locationId: id
+            routeId,
+            locationSlug
           }
         },
         locationError
@@ -76,15 +63,16 @@ export class SupabaseLocationRepository implements LocationRepositoryPort {
       return null;
     }
 
-    return toLocationEntity(
-      locationRow as LocationRow,
-      routeLocation.sequence_index
-    );
+    const routeLocation: Pick<RouteLocationRow, "sequence_index"> | null =
+      await this.getRouteLocation(routeId, locationRow.id);
+    if (routeLocation === null) {
+      return null;
+    }
+
+    return toLocationEntity(locationRow as LocationRow, routeLocation.sequence_index);
   }
 
-  public async listActiveLocations(): Promise<readonly Location[]> {
-    const routeId: string = await this.defaultRouteResolver.getDefaultRouteId();
-
+  public async listByRoute(routeId: RouteId): Promise<readonly Location[]> {
     const { data: routeLocationRows, error: routeLocationError } = await this.supabase
       .from(SUPABASE_TABLES.routeLocations)
       .select("location_id, sequence_index")
@@ -96,7 +84,7 @@ export class SupabaseLocationRepository implements LocationRepositoryPort {
         "Failed to fetch route location mappings.",
         {
           repository: "SupabaseLocationRepository",
-          operation: "listActiveLocations.routeLocations",
+          operation: "listByRoute.routeLocations",
           metadata: {
             routeId
           }
@@ -125,10 +113,10 @@ export class SupabaseLocationRepository implements LocationRepositoryPort {
 
     if (locationError !== null) {
       throw new RepositoryError(
-        "Failed to fetch active locations.",
+        "Failed to fetch route locations.",
         {
           repository: "SupabaseLocationRepository",
-          operation: "listActiveLocations.locations",
+          operation: "listByRoute.locations",
           metadata: {
             routeId
           }
@@ -146,7 +134,6 @@ export class SupabaseLocationRepository implements LocationRepositoryPort {
 
     return mappings.flatMap((mapping): readonly Location[] => {
       const locationRow: LocationRow | undefined = locationMap.get(mapping.location_id);
-
       if (locationRow === undefined) {
         this.logger.warn("Route mapping references a missing location.", {
           routeId,
@@ -157,5 +144,69 @@ export class SupabaseLocationRepository implements LocationRepositoryPort {
 
       return [toLocationEntity(locationRow, mapping.sequence_index)];
     });
+  }
+
+  private async getRouteLocation(
+    routeId: RouteId,
+    locationId: string
+  ): Promise<Pick<RouteLocationRow, "sequence_index"> | null> {
+    const { data, error } = await this.supabase
+      .from(SUPABASE_TABLES.routeLocations)
+      .select("sequence_index")
+      .eq("route_id", routeId)
+      .eq("location_id", locationId)
+      .maybeSingle();
+
+    if (error !== null) {
+      throw new RepositoryError(
+        "Failed to fetch route location mapping.",
+        {
+          repository: "SupabaseLocationRepository",
+          operation: "getRouteLocation",
+          metadata: {
+            routeId,
+            locationId
+          }
+        },
+        error
+      );
+    }
+
+    if (data === null) {
+      return null;
+    }
+
+    return data as Pick<RouteLocationRow, "sequence_index">;
+  }
+
+  private async getActiveLocationById(locationId: string): Promise<LocationRow | null> {
+    const { data, error } = await this.supabase
+      .from(SUPABASE_TABLES.locations)
+      .select(
+        "id, slug, name, description, latitude, longitude, radius_m, qr_code_value, question_prompt, expected_answer, is_active, created_at, updated_at"
+      )
+      .eq("id", locationId)
+      .eq("is_active", true)
+      .maybeSingle();
+
+    if (error !== null) {
+      throw new RepositoryError(
+        "Failed to fetch location by ID.",
+        {
+          repository: "SupabaseLocationRepository",
+          operation: "getActiveLocationById",
+          metadata: {
+            locationId
+          }
+        },
+        error
+      );
+    }
+
+    if (data === null) {
+      return null;
+    }
+
+    return data as LocationRow;
   }
 }

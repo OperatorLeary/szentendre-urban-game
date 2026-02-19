@@ -15,7 +15,7 @@ export function toLocationEntity(
   try {
     return new Location({
       id: toLocationId(row.id),
-      code: row.slug,
+      slug: row.slug,
       name: row.name,
       position: new GeoPoint({
         latitude: row.latitude,
@@ -24,6 +24,8 @@ export function toLocationEntity(
       validationRadiusMeters: row.radius_m,
       sequenceNumber: sequenceIndex,
       qrToken: QrToken.create(row.qr_code_value),
+      questionPrompt: row.question_prompt,
+      expectedAnswer: row.expected_answer,
       isActive: row.is_active,
       createdAt: parseIsoDate(row.created_at, "LocationMapper", "locations.created_at"),
       updatedAt: parseIsoDate(row.updated_at, "LocationMapper", "locations.updated_at")

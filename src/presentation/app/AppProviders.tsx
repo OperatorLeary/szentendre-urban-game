@@ -1,6 +1,7 @@
 import type { ErrorInfo, JSX, ReactNode } from "react";
 
 import type { AppServices } from "@/application/contracts/app-services.contract";
+import { QuestRuntimeProvider } from "@/presentation/app/QuestRuntimeContext";
 import { ServicesProvider } from "@/presentation/app/ServicesContext";
 import { GlobalErrorBoundary } from "@/presentation/components/system/GlobalErrorBoundary";
 
@@ -20,7 +21,9 @@ function AppProviders({ children, services }: AppProvidersProps): JSX.Element {
 
   return (
     <ServicesProvider services={services}>
-      <GlobalErrorBoundary onError={handleError}>{children}</GlobalErrorBoundary>
+      <QuestRuntimeProvider>
+        <GlobalErrorBoundary onError={handleError}>{children}</GlobalErrorBoundary>
+      </QuestRuntimeProvider>
     </ServicesProvider>
   );
 }

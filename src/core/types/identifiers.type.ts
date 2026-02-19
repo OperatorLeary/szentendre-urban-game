@@ -2,6 +2,7 @@ import { DomainError } from "@/core/errors/app-error";
 import type { Brand } from "@/core/types/brand.type";
 
 export type LocationId = Brand<string, "LocationId">;
+export type RouteId = Brand<string, "RouteId">;
 export type RunId = Brand<string, "RunId">;
 export type CheckinId = Brand<string, "CheckinId">;
 export type BugReportId = Brand<string, "BugReportId">;
@@ -25,6 +26,10 @@ function toIdentifier<TIdentifier extends string>(
 
 export function toLocationId(value: string): LocationId {
   return toIdentifier<"LocationId">(value, "locationId");
+}
+
+export function toRouteId(value: string): RouteId {
+  return toIdentifier<"RouteId">(value, "routeId");
 }
 
 export function toRunId(value: string): RunId {

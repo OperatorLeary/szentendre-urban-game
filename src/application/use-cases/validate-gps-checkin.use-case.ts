@@ -26,12 +26,14 @@ import type { GeoPoint } from "@/core/value-objects/geo-point.vo";
 type EligibilityFailureReason = Exclude<CheckinEligibilityReason, "allowed">;
 export type ValidateGpsCheckinFailureReason =
   | EligibilityFailureReason
-  | GpsValidationFailureReason;
+  | GpsValidationFailureReason
+  | "incorrect_answer";
 
 export interface ValidateGpsCheckinRequest {
   readonly checkinId: CheckinId;
   readonly runId: RunId;
   readonly locationId: LocationId;
+  readonly answerText: string;
   readonly currentPosition: GeoPoint;
   readonly horizontalAccuracyMeters?: number;
   readonly validatedAt?: Date;
@@ -97,6 +99,13 @@ export class ValidateGpsCheckinUseCase
       };
     }
 
+    if (!location.isAnswerCorrect(request.answerText)) {
+      return {
+        accepted: false,
+        reason: "incorrect_answer"
+      };
+    }
+
     const gpsValidationInput: GpsValidationInput =
       request.horizontalAccuracyMeters === undefined
         ? {
@@ -127,16 +136,23 @@ export class ValidateGpsCheckinUseCase
       id: request.checkinId,
       runId: run.id,
       locationId: location.id,
+      sequenceIndex: location.sequenceNumber,
       method: CheckinMethod.Gps,
       validatedAt,
+      gpsLatitude: request.currentPosition.latitude,
+      gpsLongitude: request.currentPosition.longitude,
       distanceMeters: gpsValidation.distanceMeters,
-      scannedQrToken: null
+      scannedQrToken: null,
+      answerText: request.answerText,
+      isAnswerCorrect: true
     });
     const persistedCheckin: Checkin =
       await this.dependencies.checkinRepository.create(checkin);
     const checkinsAfterWrite: readonly Checkin[] = [...checkins, persistedCheckin];
 
-    let runAfterCheckin: Run = run;
+    let runAfterCheckin: Run = run.withCurrentSequenceIndex(
+      run.currentSequenceIndex + 1
+    );
     let session: GameSessionSnapshot = this.dependencies.gameSessionService.buildSnapshot(
       {
         run: runAfterCheckin,
@@ -146,15 +162,15 @@ export class ValidateGpsCheckinUseCase
     );
 
     if (session.isCompleted && runAfterCheckin.status === RunStatus.Active) {
-      runAfterCheckin = await this.dependencies.runRepository.update(
-        runAfterCheckin.complete(validatedAt)
-      );
-      session = this.dependencies.gameSessionService.buildSnapshot({
-        run: runAfterCheckin,
-        locations,
-        checkins: checkinsAfterWrite
-      });
+      runAfterCheckin = runAfterCheckin.complete(validatedAt);
     }
+
+    runAfterCheckin = await this.dependencies.runRepository.update(runAfterCheckin);
+    session = this.dependencies.gameSessionService.buildSnapshot({
+      run: runAfterCheckin,
+      locations,
+      checkins: checkinsAfterWrite
+    });
 
     this.dependencies.logger.info("GPS check-in accepted.", {
       checkinId: persistedCheckin.id,

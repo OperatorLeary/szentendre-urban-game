@@ -1,11 +1,14 @@
 import type {
+  EnsureRunSessionRequest,
+  EnsureRunSessionResponse
+} from "@/application/use-cases/ensure-run-session.use-case";
+import type {
   GetRunProgressRequest,
   GetRunProgressResponse
 } from "@/application/use-cases/get-run-progress.use-case";
 import type {
-  StartRunRequest,
-  StartRunResponse
-} from "@/application/use-cases/start-run.use-case";
+  ListRoutesResponse
+} from "@/application/use-cases/list-routes.use-case";
 import type {
   SubmitBugReportRequest,
   SubmitBugReportResponse
@@ -20,7 +23,10 @@ import type {
 } from "@/application/use-cases/validate-qr-checkin.use-case";
 
 export interface GameUseCases {
-  startRun(request: StartRunRequest): Promise<StartRunResponse>;
+  listRoutes(): Promise<ListRoutesResponse>;
+  ensureRunSession(
+    request: EnsureRunSessionRequest
+  ): Promise<EnsureRunSessionResponse>;
   getRunProgress(request: GetRunProgressRequest): Promise<GetRunProgressResponse>;
   validateGpsCheckin(
     request: ValidateGpsCheckinRequest

@@ -3,6 +3,7 @@ export * from "@/core/entities/bug-report.entity";
 export * from "@/core/entities/checkin.entity";
 export * from "@/core/entities/entity";
 export * from "@/core/entities/location.entity";
+export * from "@/core/entities/route.entity";
 export * from "@/core/entities/run.entity";
 export * from "@/core/enums/checkin-method.enum";
 export * from "@/core/enums/run-status.enum";

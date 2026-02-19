@@ -1,0 +1,48 @@
+import type { LocationRepositoryPort } from "@/application/ports/location-repository.port";
+import type { RouteRepositoryPort } from "@/application/ports/route-repository.port";
+import type { UseCase } from "@/application/use-cases/use-case.contract";
+import type { Route } from "@/core/entities/route.entity";
+
+export interface RouteOverview {
+  readonly id: Route["id"];
+  readonly slug: string;
+  readonly name: string;
+  readonly description: string | null;
+  readonly firstLocationSlug: string | null;
+}
+
+export interface ListRoutesRequest {}
+
+export type ListRoutesResponse = readonly RouteOverview[];
+
+interface ListRoutesDependencies {
+  readonly routeRepository: RouteRepositoryPort;
+  readonly locationRepository: LocationRepositoryPort;
+}
+
+export class ListRoutesUseCase
+  implements UseCase<ListRoutesRequest, Promise<ListRoutesResponse>>
+{
+  public constructor(private readonly dependencies: ListRoutesDependencies) {}
+
+  public async execute(_request: ListRoutesRequest): Promise<ListRoutesResponse> {
+    const routes: readonly Route[] = await this.dependencies.routeRepository.listActive();
+
+    const routeOverviews: readonly RouteOverview[] = await Promise.all(
+      routes.map(async (route: Route): Promise<RouteOverview> => {
+        const locations = await this.dependencies.locationRepository.listByRoute(route.id);
+        const firstLocationSlug: string | null = locations[0]?.slug ?? null;
+
+        return {
+          id: route.id,
+          slug: route.slug,
+          name: route.name,
+          description: route.description,
+          firstLocationSlug
+        };
+      })
+    );
+
+    return routeOverviews;
+  }
+}

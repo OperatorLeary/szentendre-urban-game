@@ -1,6 +1,10 @@
 import { Run } from "@/core/entities/run.entity";
 import { RunStatus } from "@/core/enums/run-status.enum";
-import { toRunId } from "@/core/types/identifiers.type";
+import {
+  toLocationId,
+  toRouteId,
+  toRunId
+} from "@/core/types/identifiers.type";
 import { RepositoryError } from "@/infrastructure/errors/repository.error";
 import { parseIsoDate } from "@/infrastructure/mappers/date.mapper";
 import type { Tables } from "@/infrastructure/supabase/database.types";
@@ -9,11 +13,19 @@ type RunRow = Tables["runs"]["Row"];
 type RunInsert = Tables["runs"]["Insert"];
 type RunUpdate = Tables["runs"]["Update"];
 
+export interface RunWriteContext {
+  readonly deviceId: string;
+}
+
 export function toRunEntity(row: RunRow): Run {
   try {
     return new Run({
       id: toRunId(row.id),
+      routeId: toRouteId(row.route_id),
       playerAlias: row.player_alias,
+      startLocationId:
+        row.start_location_id === null ? null : toLocationId(row.start_location_id),
+      currentSequenceIndex: row.current_sequence_index,
       status: toRunStatus(row.status),
       startedAt: parseIsoDate(row.started_at, "RunMapper", "runs.started_at"),
       completedAt:
@@ -36,19 +48,14 @@ export function toRunEntity(row: RunRow): Run {
   }
 }
 
-export interface RunWriteContext {
-  readonly routeId: string;
-  readonly deviceId: string;
-  readonly currentSequenceIndex?: number;
-}
-
 export function toRunInsert(row: Run, context: RunWriteContext): RunInsert {
   return {
     id: row.id,
-    route_id: context.routeId,
+    route_id: row.routeId,
     device_id: context.deviceId,
     player_alias: row.playerAlias,
-    current_sequence_index: context.currentSequenceIndex ?? 1,
+    start_location_id: row.startLocationId,
+    current_sequence_index: row.currentSequenceIndex,
     status: fromRunStatus(row.status),
     started_at: row.startedAt.toISOString(),
     completed_at: row.completedAt?.toISOString() ?? null
@@ -58,6 +65,8 @@ export function toRunInsert(row: Run, context: RunWriteContext): RunInsert {
 export function toRunUpdate(row: Run): RunUpdate {
   return {
     player_alias: row.playerAlias,
+    start_location_id: row.startLocationId,
+    current_sequence_index: row.currentSequenceIndex,
     status: fromRunStatus(row.status),
     completed_at: row.completedAt?.toISOString() ?? null
   };

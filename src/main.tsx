@@ -1,5 +1,6 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
+import { registerSW } from "virtual:pwa-register";
 
 import { createAppServices } from "@/infrastructure/di/create-app-services";
 import { App } from "@/presentation/app/App";
@@ -12,6 +13,10 @@ if (!rootElement) {
 }
 
 const appServices = createAppServices();
+
+registerSW({
+  immediate: true
+});
 
 createRoot(rootElement).render(
   <StrictMode>

@@ -47,7 +47,7 @@ export class GetRunProgressUseCase
 
     const [locations, checkins]: readonly [readonly Location[], readonly Checkin[]] =
       await Promise.all([
-        this.dependencies.locationRepository.listActiveLocations(),
+        this.dependencies.locationRepository.listByRoute(run.routeId),
         this.dependencies.checkinRepository.listByRunId(run.id)
       ]);
 
@@ -62,7 +62,8 @@ export class GetRunProgressUseCase
     this.dependencies.logger.debug("Run progress loaded.", {
       runId: run.id,
       completedLocations: snapshot.completedLocations,
-      totalLocations: snapshot.totalLocations
+      totalLocations: snapshot.totalLocations,
+      currentSequenceIndex: snapshot.currentSequenceIndex
     });
 
     return snapshot;

@@ -42,9 +42,11 @@ export class CheckinContextLoaderService {
       });
     }
 
-    const location: Location | null = await this.dependencies.locationRepository.findById(
-      request.locationId
-    );
+    const locations: readonly Location[] =
+      await this.dependencies.locationRepository.listByRoute(run.routeId);
+    const location: Location | null =
+      locations.find((candidate: Location): boolean => candidate.id === request.locationId) ??
+      null;
     if (location === null) {
       throw new ApplicationError("Location not found for check-in.", {
         context: {
@@ -53,11 +55,8 @@ export class CheckinContextLoaderService {
       });
     }
 
-    const [locations, checkins]: readonly [readonly Location[], readonly Checkin[]] =
-      await Promise.all([
-        this.dependencies.locationRepository.listActiveLocations(),
-        this.dependencies.checkinRepository.listByRunId(run.id)
-      ]);
+    const checkins: readonly Checkin[] =
+      await this.dependencies.checkinRepository.listByRunId(run.id);
 
     return {
       run,

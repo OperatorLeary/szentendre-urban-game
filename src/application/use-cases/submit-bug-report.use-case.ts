@@ -6,17 +6,21 @@ import type { UseCase } from "@/application/use-cases/use-case.contract";
 import { BugReport } from "@/core/entities/bug-report.entity";
 import type { Run } from "@/core/entities/run.entity";
 import { ApplicationError } from "@/core/errors/app-error";
-import type { BugReportId, RunId } from "@/core/types/identifiers.type";
-import {
-  BugReportDetails,
-  BugReportSummary
-} from "@/core/value-objects/bug-report-text.vo";
+import type {
+  BugReportId,
+  LocationId,
+  RunId
+} from "@/core/types/identifiers.type";
+import { BugReportDescription } from "@/core/value-objects/bug-report-text.vo";
 
 export interface SubmitBugReportRequest {
   readonly bugReportId: BugReportId;
   readonly runId: RunId | null;
-  readonly summary: string;
-  readonly details: string;
+  readonly locationId: LocationId | null;
+  readonly gpsLatitude: number | null;
+  readonly gpsLongitude: number | null;
+  readonly detectedDistanceMeters: number | null;
+  readonly description: string;
   readonly createdAt?: Date;
 }
 
@@ -50,15 +54,20 @@ export class SubmitBugReportUseCase
       }
     }
 
-    const summary: BugReportSummary = BugReportSummary.create(request.summary);
-    const details: BugReportDetails = BugReportDetails.create(request.details);
+    const description: BugReportDescription = BugReportDescription.create(
+      request.description
+    );
     const createdAt: Date = request.createdAt ?? this.dependencies.clock.now();
 
     const bugReport = new BugReport({
       id: request.bugReportId,
       runId: request.runId,
-      summary,
-      details,
+      locationId: request.locationId,
+      gpsLatitude: request.gpsLatitude,
+      gpsLongitude: request.gpsLongitude,
+      detectedDistanceMeters: request.detectedDistanceMeters,
+      deviceInfo: "client-device",
+      description,
       createdAt
     });
 

@@ -27,14 +27,9 @@ export class SupabaseCheckinRepository implements CheckinRepositoryPort {
     const runRouteContext: RunRouteContext = await this.getRunRouteContext(
       checkin.runId
     );
-    const sequenceIndex: number = await this.getRouteSequenceIndex(
-      runRouteContext.routeId,
-      checkin.locationId
-    );
 
     const payload = toCheckinInsert(checkin, {
-      routeId: runRouteContext.routeId,
-      sequenceIndex
+      routeId: runRouteContext.routeId
     });
 
     const { data, error } = await this.supabase
@@ -76,7 +71,7 @@ export class SupabaseCheckinRepository implements CheckinRepositoryPort {
         "id, run_id, route_id, location_id, sequence_index, validation_type, validated_at, gps_lat, gps_lng, detected_distance_m, scanned_qr_token, answer_text, is_answer_correct, created_at, updated_at"
       )
       .eq("run_id", runId)
-      .order("validated_at", { ascending: true });
+      .order("sequence_index", { ascending: true });
 
     if (error !== null) {
       throw new RepositoryError(
@@ -164,45 +159,5 @@ export class SupabaseCheckinRepository implements CheckinRepositoryPort {
     return {
       routeId: data.route_id
     };
-  }
-
-  private async getRouteSequenceIndex(
-    routeId: string,
-    locationId: LocationId
-  ): Promise<number> {
-    const { data, error } = await this.supabase
-      .from(SUPABASE_TABLES.routeLocations)
-      .select("sequence_index")
-      .eq("route_id", routeId)
-      .eq("location_id", locationId)
-      .maybeSingle();
-
-    if (error !== null) {
-      throw new RepositoryError(
-        "Failed to resolve route sequence index for check-in.",
-        {
-          repository: "SupabaseCheckinRepository",
-          operation: "getRouteSequenceIndex",
-          metadata: {
-            routeId,
-            locationId
-          }
-        },
-        error
-      );
-    }
-
-    if (data === null) {
-      throw new RepositoryError("Location is not part of the active route.", {
-        repository: "SupabaseCheckinRepository",
-        operation: "getRouteSequenceIndex",
-        metadata: {
-          routeId,
-          locationId
-        }
-      });
-    }
-
-    return data.sequence_index;
   }
 }
