@@ -30,6 +30,7 @@ Apply migrations in order:
 1. `supabase/migrations/202602190001_phase3_initial_schema.sql`
 2. `supabase/migrations/202602190002_phase5_seed_routes.sql`
 3. `supabase/migrations/202602190003_phase6_checkin_answer_constraints.sql`
+4. `supabase/migrations/202602190004_phase8_bilingual_answers.sql`
 
 ## Run
 ```bash
