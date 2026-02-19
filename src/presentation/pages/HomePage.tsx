@@ -41,7 +41,7 @@ function HomePage(): JSX.Element {
   const [playerAlias, setPlayerAlias] = useState<string>(getStoredAlias());
   const [qrPayload, setQrPayload] = useState<string>("");
 
-  useEffect((): void => {
+  useEffect(() => {
     let isCancelled = false;
 
     const loadRoutes = async (): Promise<void> => {

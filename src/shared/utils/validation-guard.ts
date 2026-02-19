@@ -21,9 +21,15 @@ export function parseRouteLocationPayload(
   const directPathMatch: RegExpExecArray | null =
     ROUTE_LOCATION_PATTERN.exec(normalizedPayload);
   if (directPathMatch !== null) {
+    const routeSlug: string | undefined = directPathMatch[1];
+    const locationSlug: string | undefined = directPathMatch[2];
+    if (routeSlug === undefined || locationSlug === undefined) {
+      return null;
+    }
+
     return {
-      routeSlug: directPathMatch[1].toLowerCase(),
-      locationSlug: directPathMatch[2].toLowerCase()
+      routeSlug: routeSlug.toLowerCase(),
+      locationSlug: locationSlug.toLowerCase()
     };
   }
 
@@ -37,9 +43,15 @@ export function parseRouteLocationPayload(
       return null;
     }
 
+    const routeSlug: string | undefined = urlMatch[1];
+    const locationSlug: string | undefined = urlMatch[2];
+    if (routeSlug === undefined || locationSlug === undefined) {
+      return null;
+    }
+
     return {
-      routeSlug: urlMatch[1].toLowerCase(),
-      locationSlug: urlMatch[2].toLowerCase()
+      routeSlug: routeSlug.toLowerCase(),
+      locationSlug: locationSlug.toLowerCase()
     };
   } catch {
     return null;

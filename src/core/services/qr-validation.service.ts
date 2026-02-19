@@ -67,9 +67,15 @@ export class QrValidationService {
     const directPathMatch: RegExpExecArray | null =
       ROUTE_LOCATION_PATH_PATTERN.exec(normalizedPayload);
     if (directPathMatch !== null) {
+      const routeSlug: string | undefined = directPathMatch[1];
+      const locationSlug: string | undefined = directPathMatch[2];
+      if (routeSlug === undefined || locationSlug === undefined) {
+        return null;
+      }
+
       return {
-        routeSlug: directPathMatch[1].toLowerCase(),
-        locationSlug: directPathMatch[2].toLowerCase()
+        routeSlug: routeSlug.toLowerCase(),
+        locationSlug: locationSlug.toLowerCase()
       };
     }
 
@@ -83,9 +89,15 @@ export class QrValidationService {
         return null;
       }
 
+      const routeSlug: string | undefined = urlPathMatch[1];
+      const locationSlug: string | undefined = urlPathMatch[2];
+      if (routeSlug === undefined || locationSlug === undefined) {
+        return null;
+      }
+
       return {
-        routeSlug: urlPathMatch[1].toLowerCase(),
-        locationSlug: urlPathMatch[2].toLowerCase()
+        routeSlug: routeSlug.toLowerCase(),
+        locationSlug: locationSlug.toLowerCase()
       };
     } catch {
       return null;
