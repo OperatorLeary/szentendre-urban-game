@@ -1,7 +1,15 @@
-import { useEffect, useMemo, useState, type ChangeEvent, type JSX } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type ChangeEvent,
+  type JSX
+} from "react";
 import { useNavigate } from "react-router-dom";
 
 import type { RouteOverview } from "@/application/use-cases/list-routes.use-case";
+import { QrScannerPanel } from "@/presentation/components/quest/QrScannerPanel";
 import { useAppServices } from "@/presentation/hooks/useAppServices";
 import {
   APP_NAME,
@@ -40,6 +48,7 @@ function HomePage(): JSX.Element {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [playerAlias, setPlayerAlias] = useState<string>(getStoredAlias());
   const [qrPayload, setQrPayload] = useState<string>("");
+  const [isScannerVisible, setIsScannerVisible] = useState<boolean>(false);
 
   useEffect(() => {
     let isCancelled = false;
@@ -108,6 +117,20 @@ function HomePage(): JSX.Element {
     [qrPayload]
   );
 
+  const continueWithQrPayload = useCallback(
+    (payload: string): void => {
+      const parsedPayload = parseRouteLocationPayload(payload);
+      if (parsedPayload === null) {
+        setErrorMessage("QR payload must contain /r/{routeSlug}/l/{locationSlug}.");
+        return;
+      }
+
+      setStoredAlias(playerAlias);
+      navigate(toRouteLocationPath(parsedPayload.routeSlug, parsedPayload.locationSlug));
+    },
+    [navigate, playerAlias]
+  );
+
   return (
     <main className="quest-shell">
       <section className="quest-hero-card">
@@ -166,6 +189,30 @@ function HomePage(): JSX.Element {
 
       <section className="quest-panel">
         <h2 className="quest-panel-title">Start from QR link</h2>
+        <div className="quest-actions">
+          <button
+            className="quest-button quest-button--ghost"
+            type="button"
+            onClick={(): void => {
+              setIsScannerVisible((isVisible: boolean): boolean => !isVisible);
+            }}
+          >
+            {isScannerVisible ? "Hide camera scanner" : "Scan QR with camera"}
+          </button>
+        </div>
+
+        <QrScannerPanel
+          isActive={isScannerVisible}
+          onDetected={(payload: string): void => {
+            setQrPayload(payload);
+            setIsScannerVisible(false);
+            continueWithQrPayload(payload);
+          }}
+          onError={(message: string): void => {
+            setErrorMessage(message);
+          }}
+        />
+
         <label className="quest-field">
           <span className="quest-field-label">Paste QR payload</span>
           <input
@@ -181,19 +228,9 @@ function HomePage(): JSX.Element {
           className="quest-button"
           type="button"
           onClick={(): void => {
-            if (parsedQrPayload === null) {
-              setErrorMessage("QR payload must contain /r/{routeSlug}/l/{locationSlug}.");
-              return;
-            }
-
-            setStoredAlias(playerAlias);
-            navigate(
-              toRouteLocationPath(
-                parsedQrPayload.routeSlug,
-                parsedQrPayload.locationSlug
-              )
-            );
+            continueWithQrPayload(qrPayload);
           }}
+          disabled={parsedQrPayload === null}
         >
           Continue
         </button>
