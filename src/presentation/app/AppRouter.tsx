@@ -3,6 +3,7 @@ import { Route, Routes } from "react-router-dom";
 
 import { BugReportFloatingButton } from "@/presentation/components/bug-report/BugReportFloatingButton";
 import { InstallPromptButton } from "@/presentation/components/system/InstallPromptButton";
+import { LanguageSwitcher } from "@/presentation/components/system/LanguageSwitcher";
 import RouteFallback from "@/presentation/components/system/RouteFallback";
 import { ROUTES } from "@/shared/config/routes";
 
@@ -17,6 +18,7 @@ const NotFoundPage = lazy(
 function AppRouter(): JSX.Element {
   return (
     <>
+      <LanguageSwitcher />
       <InstallPromptButton />
       <BugReportFloatingButton />
       <Suspense fallback={<RouteFallback />}>

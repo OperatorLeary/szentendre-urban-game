@@ -34,7 +34,7 @@ export interface LocationProps {
   readonly sequenceNumber: number;
   readonly qrToken: QrToken;
   readonly questionPrompt: string;
-  readonly expectedAnswer: string;
+  readonly expectedAnswers: readonly string[];
   readonly isActive: boolean;
   readonly createdAt: Date;
   readonly updatedAt: Date;
@@ -48,7 +48,8 @@ export class Location extends Entity<LocationId> {
   public readonly sequenceNumber: number;
   public readonly qrToken: QrToken;
   public readonly questionPrompt: string;
-  private readonly normalizedExpectedAnswer: string;
+  public readonly expectedAnswers: readonly string[];
+  private readonly normalizedExpectedAnswers: readonly string[];
   public readonly isActive: boolean;
   public readonly createdAt: Date;
   public readonly updatedAt: Date;
@@ -74,12 +75,18 @@ export class Location extends Entity<LocationId> {
       MIN_LOCATION_QUESTION_LENGTH,
       MAX_LOCATION_QUESTION_LENGTH
     );
-    const normalizedExpectedAnswer: string = normalizeNonEmptyText(
-      props.expectedAnswer,
-      "expectedAnswer",
-      MIN_LOCATION_ANSWER_LENGTH,
-      MAX_LOCATION_ANSWER_LENGTH
-    ).toLowerCase();
+    const normalizedExpectedAnswers: readonly string[] = Array.from(
+      new Set(
+        props.expectedAnswers.map((answer: string): string =>
+          normalizeNonEmptyText(
+            answer,
+            "expectedAnswer",
+            MIN_LOCATION_ANSWER_LENGTH,
+            MAX_LOCATION_ANSWER_LENGTH
+          ).toLowerCase()
+        )
+      )
+    );
 
     if (!LOCATION_SLUG_PATTERN.test(normalizedSlug)) {
       throw new DomainError("locationSlug has invalid format.");
@@ -98,6 +105,10 @@ export class Location extends Entity<LocationId> {
       props.updatedAt.getTime() >= props.createdAt.getTime(),
       "locationUpdatedAt cannot be before locationCreatedAt."
     );
+    assertCondition(
+      normalizedExpectedAnswers.length > 0,
+      "expectedAnswers must contain at least one accepted answer."
+    );
 
     this.slug = normalizedSlug;
     this.name = normalizedName;
@@ -106,7 +117,8 @@ export class Location extends Entity<LocationId> {
     this.sequenceNumber = props.sequenceNumber;
     this.qrToken = props.qrToken;
     this.questionPrompt = normalizedQuestionPrompt;
-    this.normalizedExpectedAnswer = normalizedExpectedAnswer;
+    this.expectedAnswers = normalizedExpectedAnswers;
+    this.normalizedExpectedAnswers = normalizedExpectedAnswers;
     this.isActive = props.isActive;
     this.createdAt = props.createdAt;
     this.updatedAt = props.updatedAt;
@@ -129,6 +141,6 @@ export class Location extends Entity<LocationId> {
       return false;
     }
 
-    return normalizedAnswer === this.normalizedExpectedAnswer;
+    return this.normalizedExpectedAnswers.includes(normalizedAnswer);
   }
 }

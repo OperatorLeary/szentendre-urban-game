@@ -51,6 +51,7 @@ export interface Database {
           qr_code_value: string;
           question_prompt: string;
           expected_answer: string;
+          expected_answers: string[] | null;
           is_active: boolean;
           created_at: string;
           updated_at: string;
@@ -66,6 +67,7 @@ export interface Database {
           qr_code_value: string;
           question_prompt: string;
           expected_answer: string;
+          expected_answers?: string[] | null;
           is_active?: boolean;
           created_at?: string;
           updated_at?: string;
@@ -81,6 +83,7 @@ export interface Database {
           qr_code_value?: string;
           question_prompt?: string;
           expected_answer?: string;
+          expected_answers?: string[] | null;
           is_active?: boolean;
           created_at?: string;
           updated_at?: string;

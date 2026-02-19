@@ -1,9 +1,12 @@
 import { useEffect, useRef, type JSX } from "react";
 
+import { useLanguage } from "@/presentation/app/LanguageContext";
+
 interface QrScannerPanelProps {
   readonly isActive: boolean;
   readonly onDetected: (payload: string) => void;
   readonly onError: (message: string) => void;
+  readonly onClose: () => void;
 }
 
 interface ReaderControls {
@@ -13,8 +16,10 @@ interface ReaderControls {
 export function QrScannerPanel({
   isActive,
   onDetected,
-  onError
+  onError,
+  onClose
 }: QrScannerPanelProps): JSX.Element | null {
+  const { t } = useLanguage();
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
   useEffect((): (() => void) | void => {
@@ -58,7 +63,7 @@ export function QrScannerPanel({
           }
         )) as ReaderControls;
       } catch (error) {
-        onError(error instanceof Error ? error.message : "Unable to start QR scanner.");
+        onError(error instanceof Error ? error.message : t("qrScanner.startFailed"));
       }
     };
 
@@ -68,15 +73,44 @@ export function QrScannerPanel({
       isCancelled = true;
       controls?.stop();
     };
-  }, [isActive, onDetected, onError]);
+  }, [isActive, onDetected, onError, t]);
+
+  useEffect((): (() => void) | void => {
+    if (!isActive) {
+      return;
+    }
+
+    const handleEscape = (event: KeyboardEvent): void => {
+      if (event.key === "Escape") {
+        onClose();
+      }
+    };
+
+    window.addEventListener("keydown", handleEscape);
+    return (): void => {
+      window.removeEventListener("keydown", handleEscape);
+    };
+  }, [isActive, onClose]);
 
   if (!isActive) {
     return null;
   }
 
   return (
-    <section className="qr-scanner-panel">
-      <video className="qr-scanner-video" ref={videoRef} muted playsInline />
+    <section className="qr-scanner-overlay" role="dialog" aria-modal="true">
+      <div className="qr-scanner-frame">
+        <div className="qr-scanner-toolbar">
+          <p className="qr-scanner-hint">{t("qrScanner.overlayHint")}</p>
+          <button
+            type="button"
+            className="quest-button quest-button--ghost qr-scanner-close"
+            onClick={onClose}
+          >
+            {t("qrScanner.close")}
+          </button>
+        </div>
+        <video className="qr-scanner-video" ref={videoRef} muted playsInline />
+      </div>
     </section>
   );
 }

@@ -12,6 +12,7 @@ import {
   toRunId
 } from "@/core/types/identifiers.type";
 import { GeoPoint } from "@/core/value-objects/geo-point.vo";
+import { useLanguage } from "@/presentation/app/LanguageContext";
 import { useAppServices } from "@/presentation/hooks/useAppServices";
 import type { GeolocationSnapshot } from "@/presentation/hooks/useGeolocation";
 
@@ -51,6 +52,7 @@ interface UseLocationValidationResult {
 export function useLocationValidation(
   input: UseLocationValidationInput
 ): UseLocationValidationResult {
+  const { t } = useLanguage();
   const { gameUseCases } = useAppServices();
   const { answerText, locationId, onSessionUpdated, routeSlug, runId } = input;
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
@@ -85,14 +87,14 @@ export function useLocationValidation(
         return response;
       } catch (error) {
         setErrorMessage(
-          error instanceof Error ? error.message : "GPS validation failed."
+          error instanceof Error ? error.message : t("quest.gpsValidationFailed")
         );
         return null;
       } finally {
         setIsSubmitting(false);
       }
     },
-    [answerText, gameUseCases, locationId, onSessionUpdated, runId]
+    [answerText, gameUseCases, locationId, onSessionUpdated, runId, t]
   );
 
   const validateWithQr = useCallback(
@@ -116,14 +118,14 @@ export function useLocationValidation(
         return response;
       } catch (error) {
         setErrorMessage(
-          error instanceof Error ? error.message : "QR validation failed."
+          error instanceof Error ? error.message : t("quest.qrValidationFailed")
         );
         return null;
       } finally {
         setIsSubmitting(false);
       }
     },
-    [answerText, gameUseCases, locationId, onSessionUpdated, routeSlug, runId]
+    [answerText, gameUseCases, locationId, onSessionUpdated, routeSlug, runId, t]
   );
 
   return {

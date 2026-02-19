@@ -10,6 +10,7 @@ import { Link, useNavigate } from "react-router-dom";
 
 import type { GameSessionSnapshot } from "@/core/models/game-session.model";
 import type { Location } from "@/core/entities/location.entity";
+import { useLanguage } from "@/presentation/app/LanguageContext";
 import { LocationMap } from "@/presentation/components/quest/LocationMap";
 import { QrScannerPanel } from "@/presentation/components/quest/QrScannerPanel";
 import { useGeolocation } from "@/presentation/hooks/useGeolocation";
@@ -17,6 +18,7 @@ import { useLocationValidation } from "@/presentation/hooks/useLocationValidatio
 import { useQuestRuntime } from "@/presentation/hooks/useQuestRuntime";
 import { useRoute } from "@/presentation/hooks/useRoute";
 import { useRunSession } from "@/presentation/hooks/useRunSession";
+import type { TranslationKey } from "@/presentation/i18n/translations";
 import { ROUTES, toRouteLocationPath } from "@/shared/config/routes";
 import { formatDistanceMeters } from "@/shared/utils/format-distance";
 import { calculateHaversineDistanceMeters } from "@/shared/utils/haversine-distance";
@@ -36,28 +38,32 @@ function getNextLocationSlug(
   );
 }
 
-function mapValidationReason(reason: string): string {
+function mapValidationReason(
+  reason: string,
+  translate: (key: TranslationKey) => string
+): string {
   switch (reason) {
     case "outside_radius":
-      return "You are outside the station radius. Retry GPS or use QR override.";
+      return translate("quest.reason.outside_radius");
     case "incorrect_answer":
-      return "Answer is incorrect. Please try again.";
+      return translate("quest.reason.incorrect_answer");
     case "out_of_order":
-      return "This station is not the expected next stop.";
+      return translate("quest.reason.out_of_order");
     case "already_checked_in":
-      return "Station already completed.";
+      return translate("quest.reason.already_checked_in");
     case "mismatch":
-      return "Scanned QR does not match this station.";
+      return translate("quest.reason.mismatch");
     case "malformed":
-      return "Invalid QR payload format.";
+      return translate("quest.reason.malformed");
     case "run_not_active":
-      return "Run is not active.";
+      return translate("quest.reason.run_not_active");
     default:
-      return "Validation failed.";
+      return translate("quest.reason.default");
   }
 }
 
 function QuestLocationPage(): JSX.Element {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const routeSelection = useRoute();
   const { updateState, resetState } = useQuestRuntime();
@@ -175,7 +181,7 @@ function QuestLocationPage(): JSX.Element {
           : getNextLocationSlug(session, runSession.data.locations);
 
       if (nextLocationSlug === null) {
-        setFeedbackMessage("Route completed. Great run.");
+        setFeedbackMessage(t("quest.routeCompleted"));
         return;
       }
 
@@ -183,18 +189,18 @@ function QuestLocationPage(): JSX.Element {
         navigate(toRouteLocationPath(runSession.data.route.slug, nextLocationSlug));
       }
     },
-    [navigate, runSession.data]
+    [navigate, runSession.data, t]
   );
 
   const validateWithGps = useCallback(async (): Promise<void> => {
     if (runSession.data === null || answerText.trim().length === 0) {
-      setFeedbackMessage("Please enter your station answer first.");
+      setFeedbackMessage(t("quest.answerRequired"));
       return;
     }
 
     const geoSnapshot = await geolocation.requestCurrentPosition();
     if (geoSnapshot === null) {
-      setFeedbackMessage(geolocation.errorMessage ?? "Unable to get GPS position.");
+      setFeedbackMessage(geolocation.errorMessage ?? t("quest.unableGetGpsPosition"));
       return;
     }
 
@@ -205,17 +211,17 @@ function QuestLocationPage(): JSX.Element {
 
     const response = await locationValidation.validateWithGps(geoSnapshot);
     if (response === null) {
-      setFeedbackMessage(locationValidation.errorMessage ?? "GPS validation failed.");
+      setFeedbackMessage(locationValidation.errorMessage ?? t("quest.gpsValidationFailed"));
       return;
     }
 
     if (response.accepted) {
-      setFeedbackMessage("GPS check-in accepted.");
+      setFeedbackMessage(t("quest.gpsAccepted"));
       handleValidationSuccess(response.session);
       return;
     }
 
-    setFeedbackMessage(mapValidationReason(response.reason));
+    setFeedbackMessage(mapValidationReason(response.reason, t));
     updateState({
       detectedDistanceMeters: response.distanceMeters ?? null
     });
@@ -225,43 +231,44 @@ function QuestLocationPage(): JSX.Element {
     handleValidationSuccess,
     locationValidation,
     updateState,
-    runSession.data
+    runSession.data,
+    t
   ]);
 
   const validateWithQr = useCallback(
     async (payload: string): Promise<void> => {
       if (runSession.data === null || answerText.trim().length === 0) {
-        setFeedbackMessage("Please enter your station answer first.");
+        setFeedbackMessage(t("quest.answerRequired"));
         return;
       }
 
       const response = await locationValidation.validateWithQr(payload);
       if (response === null) {
-        setFeedbackMessage(locationValidation.errorMessage ?? "QR validation failed.");
+        setFeedbackMessage(locationValidation.errorMessage ?? t("quest.qrValidationFailed"));
         return;
       }
 
       if (response.accepted) {
-        setFeedbackMessage("QR override accepted.");
+        setFeedbackMessage(t("quest.qrAccepted"));
         handleValidationSuccess(response.session);
         return;
       }
 
-      setFeedbackMessage(mapValidationReason(response.reason));
+      setFeedbackMessage(mapValidationReason(response.reason, t));
     },
-    [answerText, handleValidationSuccess, locationValidation, runSession.data]
+    [answerText, handleValidationSuccess, locationValidation, runSession.data, t]
   );
 
   if (runSession.isLoading || runSession.data === null || activeLocation === null) {
     return (
       <main className="quest-shell">
         <section className="quest-panel">
-          <p className="quest-muted">Loading station session...</p>
+          <p className="quest-muted">{t("quest.loadingSession")}</p>
           {runSession.errorMessage !== null ? (
             <p className="quest-error">{runSession.errorMessage}</p>
           ) : null}
           <Link className="app-link" to={ROUTES.home}>
-            Back to home
+            {t("quest.backHome")}
           </Link>
         </section>
       </main>
@@ -279,10 +286,11 @@ function QuestLocationPage(): JSX.Element {
       <section className="quest-panel">
         <h1 className="quest-panel-title">{runSession.data.route.name}</h1>
         <p className="quest-muted">
-          Progress: {progressRatio} ({runSession.data.session.completionPercentage}%)
+          {t("quest.progress")}: {progressRatio} ({runSession.data.session.completionPercentage}
+          %)
         </p>
         <p className="quest-muted">
-          Station {activeLocation.sequenceNumber}: {activeLocation.name}
+          {t("quest.station")} {activeLocation.sequenceNumber}: {activeLocation.name}
         </p>
       </section>
 
@@ -295,10 +303,10 @@ function QuestLocationPage(): JSX.Element {
       </section>
 
       <section className="quest-panel">
-        <h2 className="quest-panel-title">Question</h2>
+        <h2 className="quest-panel-title">{t("quest.questionTitle")}</h2>
         <p className="quest-copy">{activeLocation.questionPrompt}</p>
         <label className="quest-field">
-          <span className="quest-field-label">Your answer</span>
+          <span className="quest-field-label">{t("quest.yourAnswerLabel")}</span>
           <input
             className="quest-input"
             value={answerText}
@@ -318,7 +326,7 @@ function QuestLocationPage(): JSX.Element {
               void validateWithGps();
             }}
           >
-            {geolocation.isLoading ? "Reading GPS..." : "Validate with GPS"}
+            {geolocation.isLoading ? t("quest.readingGps") : t("quest.validateWithGps")}
           </button>
           <button
             className="quest-button quest-button--ghost"
@@ -328,12 +336,15 @@ function QuestLocationPage(): JSX.Element {
               setIsScannerVisible((isVisible: boolean): boolean => !isVisible);
             }}
           >
-            {isScannerVisible ? "Hide QR Scanner" : "Scan QR Override"}
+            {isScannerVisible ? t("quest.hideQrScanner") : t("quest.scanQrOverride")}
           </button>
         </div>
 
         <QrScannerPanel
           isActive={isScannerVisible}
+          onClose={(): void => {
+            setIsScannerVisible(false);
+          }}
           onDetected={(payload: string): void => {
             setQrPayload(payload);
             setIsScannerVisible(false);
@@ -345,14 +356,14 @@ function QuestLocationPage(): JSX.Element {
         />
 
         <label className="quest-field">
-          <span className="quest-field-label">Or paste QR payload</span>
+          <span className="quest-field-label">{t("quest.orPasteQrPayloadLabel")}</span>
           <input
             className="quest-input"
             value={qrPayload}
             onChange={(event: ChangeEvent<HTMLInputElement>): void => {
               setQrPayload(event.target.value);
             }}
-            placeholder="Paste scanned payload"
+            placeholder={t("quest.pasteScannedPayloadPlaceholder")}
           />
         </label>
         <button
@@ -363,12 +374,12 @@ function QuestLocationPage(): JSX.Element {
             void validateWithQr(qrPayload);
           }}
         >
-          Validate QR payload
+          {t("quest.validateQrPayload")}
         </button>
 
         {computedDistanceFromTarget !== null ? (
           <p className="quest-muted">
-            Current distance to station: {formatDistanceMeters(computedDistanceFromTarget)}
+            {t("quest.currentDistance")}: {formatDistanceMeters(computedDistanceFromTarget)}
           </p>
         ) : null}
         {feedbackMessage !== null ? (
@@ -379,14 +390,14 @@ function QuestLocationPage(): JSX.Element {
       </section>
 
       <section className="quest-panel">
-        <h2 className="quest-panel-title">Next step</h2>
+        <h2 className="quest-panel-title">{t("quest.nextStepTitle")}</h2>
         <p className="quest-copy">
           {nextLocationSlug === null
-            ? "You are at the final checkpoint."
-            : `Expected next stop slug: ${nextLocationSlug}`}
+            ? t("quest.finalCheckpoint")
+            : t("quest.expectedNextStop", { slug: nextLocationSlug })}
         </p>
         <Link className="app-link" to={ROUTES.home}>
-          Exit to home
+          {t("quest.exitHome")}
         </Link>
       </section>
     </main>

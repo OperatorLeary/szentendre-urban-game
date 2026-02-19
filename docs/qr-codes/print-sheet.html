@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Szentendre City Quest - Printable QR Sheet</title>
+  <style>
+    @page {
+      size: A4 portrait;
+      margin: 10mm;
+    }
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Arial, sans-serif;
+      color: #102234;
+    }
+    h1 {
+      margin: 0 0 6mm;
+      font-size: 20px;
+    }
+    .meta {
+      margin: 0 0 8mm;
+      color: #36506a;
+      font-size: 13px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 6mm;
+    }
+    .card {
+      border: 1px solid #cad7e5;
+      border-radius: 8px;
+      padding: 4mm;
+      break-inside: avoid;
+      page-break-inside: avoid;
+      text-align: center;
+    }
+    .card h2 {
+      margin: 0;
+      font-size: 16px;
+    }
+    .slug {
+      margin: 1.5mm 0 3mm;
+      color: #47627c;
+      font-size: 12px;
+    }
+    img {
+      width: 100%;
+      max-width: 240px;
+      height: auto;
+      display: block;
+      margin: 0 auto;
+      image-rendering: pixelated;
+    }
+    .payload {
+      margin: 3mm 0 0;
+      font-size: 11px;
+      color: #4a5f74;
+      word-break: break-all;
+    }
+  </style>
+</head>
+<body>
+  <h1>Szentendre City Quest - Printable QR Sheet</h1>
+  <p class="meta">Print at 100% scale. Recommended minimum QR width: 5 cm.</p>
+  <section class="grid">
+
+      <article class="card">
+        <h2>Fo ter</h2>
+        <p class="slug">fo-ter</p>
+        <img src="png/fo-ter.png" alt="QR code for Fo ter" />
+        <p class="payload">https://szentendre-urban-game.pages.dev/r/short/l/fo-ter</p>
+      </article>
+
+      <article class="card">
+        <h2>MuveszetMalom</h2>
+        <p class="slug">muveszetmalom</p>
+        <img src="png/muveszetmalom.png" alt="QR code for MuveszetMalom" />
+        <p class="payload">https://szentendre-urban-game.pages.dev/r/short/l/muveszetmalom</p>
+      </article>
+
+      <article class="card">
+        <h2>Duna Korzo</h2>
+        <p class="slug">duna-korzo</p>
+        <img src="png/duna-korzo.png" alt="QR code for Duna Korzo" />
+        <p class="payload">https://szentendre-urban-game.pages.dev/r/short/l/duna-korzo</p>
+      </article>
+
+      <article class="card">
+        <h2>Szamos Marzipan</h2>
+        <p class="slug">szamos-marzipan</p>
+        <img src="png/szamos-marzipan.png" alt="QR code for Szamos Marzipan" />
+        <p class="payload">https://szentendre-urban-game.pages.dev/r/medium/l/szamos-marzipan</p>
+      </article>
+
+      <article class="card">
+        <h2>Blagovestenszka Church</h2>
+        <p class="slug">blagovestenszka</p>
+        <img src="png/blagovestenszka.png" alt="QR code for Blagovestenszka Church" />
+        <p class="payload">https://szentendre-urban-game.pages.dev/r/long/l/blagovestenszka</p>
+      </article>
+
+  </section>
+</body>
+</html>

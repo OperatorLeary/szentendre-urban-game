@@ -2,6 +2,7 @@ import { useEffect, useRef, type JSX } from "react";
 import L from "leaflet";
 
 import type { Location } from "@/core/entities/location.entity";
+import { useLanguage } from "@/presentation/app/LanguageContext";
 
 interface LocationMapProps {
   readonly locations: readonly Location[];
@@ -14,6 +15,7 @@ export function LocationMap({
   activeLocationId,
   userPosition
 }: LocationMapProps): JSX.Element {
+  const { t } = useLanguage();
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect((): (() => void) | void => {
@@ -72,7 +74,7 @@ export function LocationMap({
         fillOpacity: 0.85,
         weight: 2
       })
-        .bindTooltip("You", {
+        .bindTooltip(t("map.you"), {
           direction: "top"
         })
         .addTo(map);
@@ -89,7 +91,7 @@ export function LocationMap({
     return (): void => {
       map.remove();
     };
-  }, [activeLocationId, locations, userPosition]);
+  }, [activeLocationId, locations, userPosition, t]);
 
-  return <div ref={mapContainerRef} className="quest-map" aria-label="Quest map" />;
+  return <div ref={mapContainerRef} className="quest-map" aria-label={t("map.ariaLabel")} />;
 }
