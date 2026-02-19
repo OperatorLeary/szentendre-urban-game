@@ -1,0 +1,30 @@
+export const EARTH_RADIUS_METERS = 6_371_000;
+export const DEGREES_IN_HALF_TURN = 180;
+
+export const LATITUDE_MIN = -90;
+export const LATITUDE_MAX = 90;
+export const LONGITUDE_MIN = -180;
+export const LONGITUDE_MAX = 180;
+
+export const MIN_LOCATION_RADIUS_METERS = 5;
+export const MAX_LOCATION_RADIUS_METERS = 500;
+export const GPS_DISTANCE_TOLERANCE_METERS = 8;
+
+export const MIN_PLAYER_ALIAS_LENGTH = 2;
+export const MAX_PLAYER_ALIAS_LENGTH = 40;
+
+export const MIN_LOCATION_CODE_LENGTH = 2;
+export const MAX_LOCATION_CODE_LENGTH = 24;
+export const MIN_LOCATION_NAME_LENGTH = 2;
+export const MAX_LOCATION_NAME_LENGTH = 120;
+
+export const MIN_QR_TOKEN_LENGTH = 3;
+export const MAX_QR_TOKEN_LENGTH = 256;
+
+export const MIN_BUG_REPORT_SUMMARY_LENGTH = 5;
+export const MAX_BUG_REPORT_SUMMARY_LENGTH = 140;
+export const MIN_BUG_REPORT_DETAILS_LENGTH = 10;
+export const MAX_BUG_REPORT_DETAILS_LENGTH = 3_000;
+
+export const PERCENTAGE_MULTIPLIER = 100;
+export const TWO_DECIMAL_PRECISION_MULTIPLIER = 100;

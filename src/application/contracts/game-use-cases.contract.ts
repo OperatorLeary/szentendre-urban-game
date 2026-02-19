@@ -1,0 +1,34 @@
+import type {
+  GetRunProgressRequest,
+  GetRunProgressResponse
+} from "@/application/use-cases/get-run-progress.use-case";
+import type {
+  StartRunRequest,
+  StartRunResponse
+} from "@/application/use-cases/start-run.use-case";
+import type {
+  SubmitBugReportRequest,
+  SubmitBugReportResponse
+} from "@/application/use-cases/submit-bug-report.use-case";
+import type {
+  ValidateGpsCheckinRequest,
+  ValidateGpsCheckinResponse
+} from "@/application/use-cases/validate-gps-checkin.use-case";
+import type {
+  ValidateQrCheckinRequest,
+  ValidateQrCheckinResponse
+} from "@/application/use-cases/validate-qr-checkin.use-case";
+
+export interface GameUseCases {
+  startRun(request: StartRunRequest): Promise<StartRunResponse>;
+  getRunProgress(request: GetRunProgressRequest): Promise<GetRunProgressResponse>;
+  validateGpsCheckin(
+    request: ValidateGpsCheckinRequest
+  ): Promise<ValidateGpsCheckinResponse>;
+  validateQrCheckin(
+    request: ValidateQrCheckinRequest
+  ): Promise<ValidateQrCheckinResponse>;
+  submitBugReport(
+    request: SubmitBugReportRequest
+  ): Promise<SubmitBugReportResponse>;
+}
