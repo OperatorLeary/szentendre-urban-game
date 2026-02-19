@@ -12,7 +12,10 @@ import type { CheckinEligibilityReason } from "@/core/models/checkin-eligibility
 import type { GameSessionSnapshot } from "@/core/models/game-session.model";
 import type { GpsValidationFailureReason } from "@/core/models/gps-validation.model";
 import { GameSessionService } from "@/core/services/game-session.service";
-import { GpsValidationService } from "@/core/services/gps-validation.service";
+import {
+  GpsValidationService,
+  type GpsValidationInput
+} from "@/core/services/gps-validation.service";
 import type {
   CheckinId,
   LocationId,
@@ -94,12 +97,18 @@ export class ValidateGpsCheckinUseCase
       };
     }
 
-    const gpsValidation = this.dependencies.gpsValidationService.validate({
+    const gpsValidationInput: GpsValidationInput = {
       currentPosition: request.currentPosition,
       targetPosition: location.position,
-      allowedRadiusMeters: location.validationRadiusMeters,
-      horizontalAccuracyMeters: request.horizontalAccuracyMeters
-    });
+      allowedRadiusMeters: location.validationRadiusMeters
+    };
+
+    if (request.horizontalAccuracyMeters !== undefined) {
+      gpsValidationInput.horizontalAccuracyMeters = request.horizontalAccuracyMeters;
+    }
+
+    const gpsValidation =
+      this.dependencies.gpsValidationService.validate(gpsValidationInput);
     if (!gpsValidation.isValid) {
       return {
         accepted: false,

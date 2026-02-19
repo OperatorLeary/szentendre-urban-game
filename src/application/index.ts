@@ -6,6 +6,7 @@ export * from "@/application/ports/clock.port";
 export * from "@/application/ports/location-repository.port";
 export * from "@/application/ports/logger.port";
 export * from "@/application/ports/run-repository.port";
+export * from "@/application/services/checkin-context-loader.service";
 export * from "@/application/use-cases/get-run-progress.use-case";
 export * from "@/application/use-cases/start-run.use-case";
 export * from "@/application/use-cases/submit-bug-report.use-case";

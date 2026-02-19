@@ -12,3 +12,8 @@ coverage
 .vscode/*
 !.vscode/extensions.json
 !.vscode/settings.json
+.wrangler/
+.dev.vars
+.dev.vars.*
+supabase/.temp/
+supabase/.branches/

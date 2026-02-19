@@ -4,7 +4,7 @@ export interface AppErrorOptions {
 }
 
 export abstract class AppError extends Error {
-  public readonly cause: unknown;
+  public override cause: unknown;
   public readonly context: Readonly<Record<string, unknown>>;
 
   protected constructor(message: string, options: AppErrorOptions = {}) {

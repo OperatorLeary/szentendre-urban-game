@@ -1,5 +1,5 @@
 import type { Checkin } from "@/core/entities/checkin.entity";
-import type { Location } from "@/core/entities/location.entity";
+import { Location } from "@/core/entities/location.entity";
 import type { Run } from "@/core/entities/run.entity";
 import { RunStatus } from "@/core/enums/run-status.enum";
 import type { CheckinEligibility } from "@/core/models/checkin-eligibility.model";

@@ -105,6 +105,7 @@ create table if not exists public.runs (
   id uuid primary key default gen_random_uuid(),
   route_id uuid not null references public.routes(id) on delete restrict,
   device_id text not null,
+  player_alias text not null,
   start_location_id uuid null references public.locations(id) on delete set null,
   current_sequence_index integer not null default 1,
   status public.run_status not null default 'active',
@@ -113,6 +114,9 @@ create table if not exists public.runs (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   constraint runs_device_id_nonempty_chk check (char_length(trim(device_id)) >= 8),
+  constraint runs_player_alias_length_chk check (
+    char_length(trim(player_alias)) between 2 and 40
+  ),
   constraint runs_current_sequence_positive_chk check (current_sequence_index > 0),
   constraint runs_completed_at_consistency_chk check (
     (status = 'completed' and completed_at is not null) or
@@ -140,9 +144,11 @@ create table if not exists public.checkins (
   location_id uuid not null references public.locations(id) on delete restrict,
   sequence_index integer not null,
   validation_type public.validation_type not null,
+  validated_at timestamptz not null default now(),
   gps_lat double precision null,
   gps_lng double precision null,
   detected_distance_m double precision null,
+  scanned_qr_token text null,
   answer_text text null,
   is_answer_correct boolean null,
   created_at timestamptz not null default now(),
@@ -155,8 +161,8 @@ create table if not exists public.checkins (
     detected_distance_m is null or detected_distance_m >= 0
   ),
   constraint checkins_validation_data_chk check (
-    (validation_type = 'gps' and gps_lat is not null and gps_lng is not null) or
-    (validation_type = 'qr_override')
+    (validation_type = 'gps' and detected_distance_m is not null and scanned_qr_token is null) or
+    (validation_type = 'qr_override' and scanned_qr_token is not null and detected_distance_m is null)
   )
 );
 
