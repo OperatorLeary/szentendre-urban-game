@@ -147,6 +147,65 @@ export interface Database {
           }
         ];
       };
+      route_stations: {
+        Row: {
+          id: string;
+          route_id: string;
+          location_id: string;
+          question_prompt: string | null;
+          question_prompt_hu: string | null;
+          instruction_brief: string | null;
+          instruction_brief_hu: string | null;
+          instruction_full: string | null;
+          instruction_full_hu: string | null;
+          expected_answer: string | null;
+          expected_answers: string[] | null;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          route_id: string;
+          location_id: string;
+          question_prompt?: string | null;
+          question_prompt_hu?: string | null;
+          instruction_brief?: string | null;
+          instruction_brief_hu?: string | null;
+          instruction_full?: string | null;
+          instruction_full_hu?: string | null;
+          expected_answer?: string | null;
+          expected_answers?: string[] | null;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          route_id?: string;
+          location_id?: string;
+          question_prompt?: string | null;
+          question_prompt_hu?: string | null;
+          instruction_brief?: string | null;
+          instruction_brief_hu?: string | null;
+          instruction_full?: string | null;
+          instruction_full_hu?: string | null;
+          expected_answer?: string | null;
+          expected_answers?: string[] | null;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "route_stations_route_location_fkey";
+            columns: ["route_id", "location_id"];
+            isOneToOne: false;
+            referencedRelation: "route_locations";
+            referencedColumns: ["route_id", "location_id"];
+          }
+        ];
+      };
       runs: {
         Row: {
           id: string;

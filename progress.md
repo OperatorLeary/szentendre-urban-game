@@ -11,3 +11,4 @@ pm run build passed after CSS update. Attempted Playwright skill client verifica
 - 2026-02-20: Added Phase 16 SQL seed for 24-station HU instruction content (202602200007_phase16_seed_long_route_hu_instructions.sql) mapped by long route sequence index with missing-sequence reporting.
 - 2026-02-20: Implemented QR-entry restart mode for better tourist UX: when entering a station via QR start flow (`?entry=qr`), same-route active runs are safely abandoned and a new run is started from the scanned station sequence.
 - 2026-02-20: Added Phase 19 migration (`202602200010_phase19_long_route_qr_entry_param.sql`) to backfill long-route QR payloads with `?entry=qr` for consistent QR-first onboarding.
+- 2026-02-20: Implemented route-specific station content model (Phase 20) with new `route_stations` table, backfill + RLS, and repository read-path support with safe fallback to legacy `locations` fields if migration is not yet applied.

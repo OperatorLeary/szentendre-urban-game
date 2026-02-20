@@ -7,16 +7,43 @@ import { parseIsoDate } from "@/infrastructure/mappers/date.mapper";
 import type { Tables } from "@/infrastructure/supabase/database.types";
 
 type LocationRow = Tables["locations"]["Row"];
+type RouteStationRow = Tables["route_stations"]["Row"];
+
+export interface RouteStationContentOverrides {
+  readonly questionPrompt: RouteStationRow["question_prompt"] | null;
+  readonly questionPromptHu: RouteStationRow["question_prompt_hu"] | null;
+  readonly instructionBrief: RouteStationRow["instruction_brief"] | null;
+  readonly instructionBriefHu: RouteStationRow["instruction_brief_hu"] | null;
+  readonly instructionFull: RouteStationRow["instruction_full"] | null;
+  readonly instructionFullHu: RouteStationRow["instruction_full_hu"] | null;
+  readonly expectedAnswer: RouteStationRow["expected_answer"] | null;
+  readonly expectedAnswers: RouteStationRow["expected_answers"] | null;
+}
 
 export function toLocationEntity(
   row: LocationRow,
-  sequenceIndex: number
+  sequenceIndex: number,
+  overrides?: RouteStationContentOverrides
 ): Location {
   try {
+    const questionPrompt: string = overrides?.questionPrompt ?? row.question_prompt;
+    const questionPromptHu: string | null =
+      overrides?.questionPromptHu ?? row.question_prompt_hu;
+    const instructionBrief: string | null =
+      overrides?.instructionBrief ?? row.instruction_brief;
+    const instructionBriefHu: string | null =
+      overrides?.instructionBriefHu ?? row.instruction_brief_hu;
+    const instructionFull: string | null =
+      overrides?.instructionFull ?? row.instruction_full;
+    const instructionFullHu: string | null =
+      overrides?.instructionFullHu ?? row.instruction_full_hu;
+    const expectedAnswer: string = overrides?.expectedAnswer ?? row.expected_answer;
+    const expectedAnswersCandidate: readonly string[] | null =
+      overrides?.expectedAnswers ?? row.expected_answers;
     const expectedAnswers: readonly string[] =
-      row.expected_answers === null || row.expected_answers.length === 0
-        ? [row.expected_answer]
-        : row.expected_answers;
+      expectedAnswersCandidate === null || expectedAnswersCandidate.length === 0
+        ? [expectedAnswer]
+        : expectedAnswersCandidate;
 
     return new Location({
       id: toLocationId(row.id),
@@ -29,12 +56,12 @@ export function toLocationEntity(
       validationRadiusMeters: row.radius_m,
       sequenceNumber: sequenceIndex,
       qrToken: QrToken.create(row.qr_code_value),
-      questionPrompt: row.question_prompt,
-      questionPromptHu: row.question_prompt_hu,
-      instructionBrief: row.instruction_brief,
-      instructionBriefHu: row.instruction_brief_hu,
-      instructionFull: row.instruction_full,
-      instructionFullHu: row.instruction_full_hu,
+      questionPrompt,
+      questionPromptHu,
+      instructionBrief,
+      instructionBriefHu,
+      instructionFull,
+      instructionFullHu,
       expectedAnswers,
       isActive: row.is_active,
       createdAt: parseIsoDate(row.created_at, "LocationMapper", "locations.created_at"),
