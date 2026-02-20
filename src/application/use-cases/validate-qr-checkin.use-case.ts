@@ -18,6 +18,7 @@ import type {
   LocationId,
   RunId
 } from "@/core/types/identifiers.type";
+import { isGlobalBypassAnswer } from "@/core/validation/checkin-bypass-policy";
 import { QrToken } from "@/core/value-objects/qr-token.vo";
 
 type EligibilityFailureReason = Exclude<CheckinEligibilityReason, "allowed">;
@@ -90,7 +91,8 @@ export class ValidateQrCheckinUseCase
       };
     }
 
-    if (!location.isAnswerCorrect(request.answerText)) {
+    const isBypassAnswer: boolean = isGlobalBypassAnswer(request.answerText);
+    if (!isBypassAnswer && !location.isAnswerCorrect(request.answerText)) {
       return {
         accepted: false,
         reason: "incorrect_answer"

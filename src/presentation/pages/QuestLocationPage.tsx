@@ -28,6 +28,7 @@ import type { TranslationKey } from "@/presentation/i18n/translations";
 import { ROUTES, toRouteLocationPath } from "@/shared/config/routes";
 import { formatDistanceMeters } from "@/shared/utils/format-distance";
 import { calculateHaversineDistanceMeters } from "@/shared/utils/haversine-distance";
+import { isGlobalBypassAnswer } from "@/core/validation/checkin-bypass-policy";
 
 type NavigationMode = "text" | "map";
 
@@ -411,6 +412,29 @@ function QuestLocationPage(): JSX.Element {
       return;
     }
 
+    if (activeLocation !== null && isGlobalBypassAnswer(answerText)) {
+      const response = await locationValidation.validateWithQr(
+        activeLocation.qrToken.toString()
+      );
+
+      if (response === null) {
+        setFeedbackMessage(locationValidation.errorMessage ?? t("quest.qrValidationFailed"));
+        play("error");
+        return;
+      }
+
+      if (response.accepted) {
+        setFeedbackMessage(t("quest.bypassAccepted"));
+        play("success");
+        handleValidationSuccess(response.session);
+        return;
+      }
+
+      setFeedbackMessage(mapValidationReason(response.reason, t));
+      play("error");
+      return;
+    }
+
     const geoSnapshot = await geolocation.requestCurrentPosition();
     if (geoSnapshot === null) {
       setFeedbackMessage(geolocation.errorMessage ?? t("quest.unableGetGpsPosition"));
@@ -449,6 +473,7 @@ function QuestLocationPage(): JSX.Element {
     locationValidation,
     updateState,
     runSession.data,
+    activeLocation,
     t,
     play
   ]);
@@ -559,7 +584,7 @@ function QuestLocationPage(): JSX.Element {
     completedAt: summaryCompletedAtLabel
   });
 
-  const shareSummary = useCallback(async (): Promise<void> => {
+  const shareSummary = async (): Promise<void> => {
     if (!isRunCompleted) {
       return;
     }
@@ -581,8 +606,7 @@ function QuestLocationPage(): JSX.Element {
 
       if (
         typeof navigator !== "undefined" &&
-        "clipboard" in navigator &&
-        navigator.clipboard !== undefined
+        "clipboard" in navigator
       ) {
         await navigator.clipboard.writeText(summaryShareText);
         setFeedbackMessage(t("quest.summaryCopied"));
@@ -597,9 +621,9 @@ function QuestLocationPage(): JSX.Element {
 
     setFeedbackMessage(t("quest.summaryShareFailed"));
     play("error");
-  }, [isRunCompleted, play, summaryShareText, t]);
+  };
 
-  const downloadSummaryCard = useCallback((): void => {
+  const downloadSummaryCard = (): void => {
     if (!isRunCompleted) {
       return;
     }
@@ -637,17 +661,7 @@ function QuestLocationPage(): JSX.Element {
 
     setFeedbackMessage(t("quest.summaryDownloadSuccess"));
     play("success");
-  }, [
-    isRunCompleted,
-    localizedRouteTitle,
-    play,
-    summaryRouteSlug,
-    summaryCompletedAt,
-    summaryCompletedAtLabel,
-    summaryDurationLabel,
-    summaryStationsLabel,
-    t
-  ]);
+  };
 
   return (
     <main className="quest-shell">
