@@ -1,4 +1,4 @@
-import type { JSX } from "react";
+import { useEffect, useRef, type JSX } from "react";
 
 import { useLanguage } from "@/presentation/app/LanguageContext";
 import { useSound } from "@/presentation/app/SoundContext";
@@ -6,14 +6,19 @@ import { useSound } from "@/presentation/app/SoundContext";
 export function SoundToggleButton(): JSX.Element {
   const { t } = useLanguage();
   const { isEnabled, play, toggleEnabled, unlock } = useSound();
+  const previousEnabledRef = useRef<boolean>(isEnabled);
 
-  const handleToggle = (): void => {
-    unlock();
-
-    if (isEnabled) {
+  useEffect((): void => {
+    if (!previousEnabledRef.current && isEnabled) {
+      unlock();
       play("tap");
     }
 
+    previousEnabledRef.current = isEnabled;
+  }, [isEnabled, play, unlock]);
+
+  const handleToggle = (): void => {
+    unlock();
     toggleEnabled();
   };
 

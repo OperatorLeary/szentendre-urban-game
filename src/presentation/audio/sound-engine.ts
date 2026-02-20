@@ -1,4 +1,10 @@
-export type QuestSound = "tap" | "success" | "error" | "transition";
+export type QuestSound =
+  | "tap"
+  | "success"
+  | "error"
+  | "transition"
+  | "language_hu"
+  | "language_en";
 
 interface ToneSpec {
   readonly frequency: number;
@@ -20,7 +26,15 @@ const SOUND_LIBRARY: Readonly<Record<QuestSound, readonly ToneSpec[]>> = Object.
     { frequency: 350, durationMs: 80, volume: 0.045, type: "sawtooth" },
     { frequency: 280, durationMs: 95, volume: 0.038, type: "sawtooth", delayMs: 84 }
   ],
-  transition: [{ frequency: 520, durationMs: 38, volume: 0.02, type: "triangle" }]
+  transition: [{ frequency: 520, durationMs: 38, volume: 0.02, type: "triangle" }],
+  language_hu: [
+    { frequency: 470, durationMs: 62, volume: 0.032, type: "sine" },
+    { frequency: 390, durationMs: 88, volume: 0.029, type: "sine", delayMs: 66 }
+  ],
+  language_en: [
+    { frequency: 620, durationMs: 56, volume: 0.031, type: "triangle" },
+    { frequency: 820, durationMs: 78, volume: 0.03, type: "triangle", delayMs: 62 }
+  ]
 });
 
 interface WindowWithWebkitAudioContext extends Window {

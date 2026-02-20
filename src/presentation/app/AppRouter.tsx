@@ -15,6 +15,7 @@ import { IntroSplash } from "@/presentation/components/system/IntroSplash";
 import { InstallPromptButton } from "@/presentation/components/system/InstallPromptButton";
 import { LanguageSwitcher } from "@/presentation/components/system/LanguageSwitcher";
 import { SoundToggleButton } from "@/presentation/components/system/SoundToggleButton";
+import { ThemeSwitcher } from "@/presentation/components/system/ThemeSwitcher";
 import RouteFallback from "@/presentation/components/system/RouteFallback";
 import { ROUTES } from "@/shared/config/routes";
 
@@ -67,6 +68,7 @@ function AppRouter(): JSX.Element {
       <IntroSplash isVisible={isIntroVisible} onComplete={handleIntroComplete} />
       <div className="top-controls">
         <LanguageSwitcher />
+        <ThemeSwitcher />
         <SoundToggleButton />
       </div>
       <InstallPromptButton />
