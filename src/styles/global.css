@@ -576,6 +576,65 @@ body::after {
   font-weight: 650;
 }
 
+.quest-summary-grid {
+  margin-top: 0.82rem;
+  display: grid;
+  gap: 0.62rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.quest-summary-item {
+  border: 1px solid var(--color-form-surface-border);
+  border-radius: 0.8rem;
+  background: var(--color-form-surface-bg);
+  padding: 0.62rem 0.72rem;
+}
+
+.quest-summary-item--wide {
+  grid-column: 1 / -1;
+}
+
+.quest-summary-item-label {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--color-muted);
+}
+
+.quest-summary-item-value {
+  margin: 0.3rem 0 0;
+  font-size: 1.02rem;
+  font-weight: 760;
+}
+
+.quest-summary-card {
+  margin-top: 0.82rem;
+  padding: 0.86rem;
+  border-radius: 0.92rem;
+  border: 1px solid var(--color-route-border);
+  background:
+    linear-gradient(165deg, rgba(255, 255, 255, 0.92), rgba(232, 244, 255, 0.84)),
+    var(--color-primary-soft);
+}
+
+.quest-summary-card-title {
+  margin: 0;
+  font-size: 1.02rem;
+  letter-spacing: -0.01em;
+}
+
+.quest-summary-card-copy {
+  margin: 0.44rem 0 0.62rem;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-route-copy);
+}
+
+.quest-summary-card-meta {
+  margin: 0.32rem 0 0;
+  color: var(--color-route-copy);
+}
+
 .quest-error,
 .bug-report-error {
   margin-top: 0.82rem;
@@ -958,6 +1017,13 @@ html[data-theme="dark"] .bug-report-error {
   color: #ffbec7;
 }
 
+html[data-theme="dark"] .quest-summary-card {
+  border-color: rgba(116, 156, 191, 0.72);
+  background:
+    linear-gradient(165deg, rgba(20, 44, 66, 0.92), rgba(16, 36, 54, 0.88)),
+    rgba(21, 47, 70, 0.9);
+}
+
 html[data-theme="dark"] .run-abandon-warning-icon {
   border-color: #d96d7d;
   background: rgba(105, 34, 45, 0.7);
@@ -1072,6 +1138,10 @@ html[data-theme="dark"] .quest-button--ghost:not(:disabled):active {
 
   .quest-panel-header .quest-button {
     width: 100%;
+  }
+
+  .quest-summary-grid {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
