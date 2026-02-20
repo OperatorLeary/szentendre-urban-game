@@ -9,6 +9,7 @@ import { useNavigate } from "react-router-dom";
 
 import type { RouteOverview } from "@/application/use-cases/list-routes.use-case";
 import { useLanguage } from "@/presentation/app/LanguageContext";
+import { useSound } from "@/presentation/app/SoundContext";
 import { QrScannerPanel } from "@/presentation/components/quest/QrScannerPanel";
 import { useAppServices } from "@/presentation/hooks/useAppServices";
 import { localizeRouteDisplay } from "@/presentation/i18n/localize-route";
@@ -42,6 +43,7 @@ function setStoredAlias(alias: string): void {
 
 function HomePage(): JSX.Element {
   const { t } = useLanguage();
+  const { play } = useSound();
   const navigate = useNavigate();
   const { gameUseCases, logger } = useAppServices();
   const [routes, setRoutes] = useState<readonly RouteOverview[]>([]);
@@ -96,6 +98,7 @@ function HomePage(): JSX.Element {
   const startRoute = (route: RouteOverview): void => {
     const routeStartLocationSlug: string | null = route.firstLocationSlug;
     if (routeStartLocationSlug === null) {
+      play("error");
       const routeDisplay = localizeRouteDisplay(
         route.slug,
         route.name,
@@ -119,6 +122,7 @@ function HomePage(): JSX.Element {
       firstLocationSlug: routeStartLocationSlug
     });
 
+    play("tap");
     navigate(toRouteLocationPath(route.slug, routeStartLocationSlug));
   };
 
@@ -127,13 +131,15 @@ function HomePage(): JSX.Element {
       const parsedPayload = parseRouteLocationPayload(payload);
       if (parsedPayload === null) {
         setErrorMessage(t("home.qrPayloadInvalid"));
+        play("error");
         return;
       }
 
+      play("tap");
       setStoredAlias(playerAlias);
       navigate(toRouteLocationPath(parsedPayload.routeSlug, parsedPayload.locationSlug));
     },
-    [navigate, playerAlias, t]
+    [navigate, play, playerAlias, t]
   );
 
   return (
@@ -203,6 +209,7 @@ function HomePage(): JSX.Element {
             className="quest-button quest-button--ghost"
             type="button"
             onClick={(): void => {
+              play("tap");
               setIsScannerVisible((isVisible: boolean): boolean => !isVisible);
             }}
           >

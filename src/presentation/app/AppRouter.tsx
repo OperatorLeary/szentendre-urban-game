@@ -1,9 +1,11 @@
-import { Suspense, lazy, type JSX } from "react";
-import { Route, Routes, useLocation } from "react-router-dom";
+import { Suspense, lazy, useEffect, useRef, type JSX } from "react";
+import { Route, Routes, useLocation, useNavigationType } from "react-router-dom";
 
+import { useSound } from "@/presentation/app/SoundContext";
 import { BugReportFloatingButton } from "@/presentation/components/bug-report/BugReportFloatingButton";
 import { InstallPromptButton } from "@/presentation/components/system/InstallPromptButton";
 import { LanguageSwitcher } from "@/presentation/components/system/LanguageSwitcher";
+import { SoundToggleButton } from "@/presentation/components/system/SoundToggleButton";
 import RouteFallback from "@/presentation/components/system/RouteFallback";
 import { ROUTES } from "@/shared/config/routes";
 
@@ -17,14 +19,34 @@ const NotFoundPage = lazy(
 
 function AppRouter(): JSX.Element {
   const location = useLocation();
+  const navigationType = useNavigationType();
+  const { play } = useSound();
+  const previousPathnameRef = useRef<string | null>(null);
+
+  useEffect((): void => {
+    const previousPathname: string | null = previousPathnameRef.current;
+    if (previousPathname !== null && previousPathname !== location.pathname) {
+      play("transition");
+    }
+
+    previousPathnameRef.current = location.pathname;
+  }, [location.pathname, play]);
+
+  const routeStageClassName =
+    navigationType === "POP"
+      ? "route-stage route-stage--back"
+      : "route-stage route-stage--forward";
 
   return (
     <>
-      <LanguageSwitcher />
+      <div className="top-controls">
+        <LanguageSwitcher />
+        <SoundToggleButton />
+      </div>
       <InstallPromptButton />
       <BugReportFloatingButton />
       <Suspense fallback={<RouteFallback />}>
-        <div className="route-stage" key={location.pathname}>
+        <div className={routeStageClassName} key={location.pathname}>
           <Routes location={location}>
             <Route path={ROUTES.home} element={<HomePage />} />
             <Route path={ROUTES.routeLocation} element={<QuestLocationPage />} />

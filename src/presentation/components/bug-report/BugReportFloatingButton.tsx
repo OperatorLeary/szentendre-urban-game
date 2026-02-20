@@ -1,11 +1,13 @@
 import { useState, type FormEvent, type JSX } from "react";
 
 import { useLanguage } from "@/presentation/app/LanguageContext";
+import { useSound } from "@/presentation/app/SoundContext";
 import { useBugReport } from "@/presentation/hooks/useBugReport";
 import { useQuestRuntime } from "@/presentation/hooks/useQuestRuntime";
 
 export function BugReportFloatingButton(): JSX.Element {
   const { t } = useLanguage();
+  const { play } = useSound();
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [description, setDescription] = useState<string>("");
   const { state } = useQuestRuntime();
@@ -16,9 +18,13 @@ export function BugReportFloatingButton(): JSX.Element {
     const isSuccess: boolean = await bugReport.submitBugReport(description, state);
 
     if (isSuccess) {
+      play("success");
       setDescription("");
       setIsOpen(false);
+      return;
     }
+
+    play("error");
   };
 
   return (
@@ -27,6 +33,7 @@ export function BugReportFloatingButton(): JSX.Element {
         type="button"
         className="bug-report-fab"
         onClick={(): void => {
+          play("tap");
           bugReport.resetStatus();
           setIsOpen((isCurrentlyOpen: boolean): boolean => !isCurrentlyOpen);
         }}
@@ -62,6 +69,7 @@ export function BugReportFloatingButton(): JSX.Element {
                 className="quest-button quest-button--ghost"
                 type="button"
                 onClick={(): void => {
+                  play("tap");
                   setIsOpen(false);
                 }}
               >

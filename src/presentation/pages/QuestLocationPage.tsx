@@ -11,6 +11,7 @@ import { Link, useNavigate } from "react-router-dom";
 import type { GameSessionSnapshot } from "@/core/models/game-session.model";
 import type { Location } from "@/core/entities/location.entity";
 import { useLanguage } from "@/presentation/app/LanguageContext";
+import { useSound } from "@/presentation/app/SoundContext";
 import { AbandonRunDialog } from "@/presentation/components/quest/AbandonRunDialog";
 import { LocationMap } from "@/presentation/components/quest/LocationMap";
 import { QrScannerPanel } from "@/presentation/components/quest/QrScannerPanel";
@@ -67,6 +68,7 @@ function mapValidationReason(
 
 function QuestLocationPage(): JSX.Element {
   const { language, t } = useLanguage();
+  const { play } = useSound();
   const navigate = useNavigate();
   const routeSelection = useRoute();
   const { updateState, resetState } = useQuestRuntime();
@@ -186,15 +188,16 @@ function QuestLocationPage(): JSX.Element {
           : getNextLocationSlug(session, runSession.data.locations);
 
       if (nextLocationSlug === null) {
-        setFeedbackMessage(t("quest.routeCompleted"));
-        return;
-      }
+      setFeedbackMessage(t("quest.routeCompleted"));
+      play("success");
+      return;
+    }
 
       if (runSession.data !== null) {
         navigate(toRouteLocationPath(runSession.data.route.slug, nextLocationSlug));
       }
     },
-    [navigate, runSession.data, t]
+    [navigate, play, runSession.data, t]
   );
 
   const validateWithGps = useCallback(async (): Promise<void> => {
@@ -206,6 +209,7 @@ function QuestLocationPage(): JSX.Element {
     const geoSnapshot = await geolocation.requestCurrentPosition();
     if (geoSnapshot === null) {
       setFeedbackMessage(geolocation.errorMessage ?? t("quest.unableGetGpsPosition"));
+      play("error");
       return;
     }
 
@@ -217,16 +221,19 @@ function QuestLocationPage(): JSX.Element {
     const response = await locationValidation.validateWithGps(geoSnapshot);
     if (response === null) {
       setFeedbackMessage(locationValidation.errorMessage ?? t("quest.gpsValidationFailed"));
+      play("error");
       return;
     }
 
     if (response.accepted) {
       setFeedbackMessage(t("quest.gpsAccepted"));
+      play("success");
       handleValidationSuccess(response.session);
       return;
     }
 
     setFeedbackMessage(mapValidationReason(response.reason, t));
+    play("error");
     updateState({
       detectedDistanceMeters: response.distanceMeters ?? null
     });
@@ -237,7 +244,8 @@ function QuestLocationPage(): JSX.Element {
     locationValidation,
     updateState,
     runSession.data,
-    t
+    t,
+    play
   ]);
 
   const validateWithQr = useCallback(
@@ -250,30 +258,35 @@ function QuestLocationPage(): JSX.Element {
       const response = await locationValidation.validateWithQr(payload);
       if (response === null) {
         setFeedbackMessage(locationValidation.errorMessage ?? t("quest.qrValidationFailed"));
+        play("error");
         return;
       }
 
       if (response.accepted) {
         setFeedbackMessage(t("quest.qrAccepted"));
+        play("success");
         handleValidationSuccess(response.session);
         return;
       }
 
       setFeedbackMessage(mapValidationReason(response.reason, t));
+      play("error");
     },
-    [answerText, handleValidationSuccess, locationValidation, runSession.data, t]
+    [answerText, handleValidationSuccess, locationValidation, runSession.data, t, play]
   );
 
   const handleConfirmAbandon = useCallback(async (): Promise<void> => {
     const isSuccess: boolean = await runControl.abandonActiveRun();
     if (!isSuccess) {
+      play("error");
       return;
     }
 
     setIsAbandonDialogOpen(false);
     setFeedbackMessage(t("quest.abandonSuccess"));
+    play("success");
     navigate(ROUTES.home, { replace: true });
-  }, [navigate, runControl, t]);
+  }, [navigate, play, runControl, t]);
 
   if (runSession.isLoading || runSession.data === null || activeLocation === null) {
     return (
@@ -315,6 +328,7 @@ function QuestLocationPage(): JSX.Element {
             className="quest-button quest-button--danger"
             type="button"
             onClick={(): void => {
+              play("tap");
               runControl.resetAbandonError();
               setIsAbandonDialogOpen(true);
             }}
@@ -360,6 +374,7 @@ function QuestLocationPage(): JSX.Element {
             type="button"
             disabled={locationValidation.isSubmitting || geolocation.isLoading}
             onClick={(): void => {
+              play("tap");
               void validateWithGps();
             }}
           >
@@ -370,6 +385,7 @@ function QuestLocationPage(): JSX.Element {
             type="button"
             disabled={locationValidation.isSubmitting}
             onClick={(): void => {
+              play("tap");
               setIsScannerVisible((isVisible: boolean): boolean => !isVisible);
             }}
           >
@@ -385,10 +401,12 @@ function QuestLocationPage(): JSX.Element {
           onDetected={(payload: string): void => {
             setQrPayload(payload);
             setIsScannerVisible(false);
+            play("tap");
             void validateWithQr(payload);
           }}
           onError={(message: string): void => {
             setFeedbackMessage(message);
+            play("error");
           }}
         />
 
@@ -408,6 +426,7 @@ function QuestLocationPage(): JSX.Element {
           type="button"
           disabled={locationValidation.isSubmitting}
           onClick={(): void => {
+            play("tap");
             void validateWithQr(qrPayload);
           }}
         >

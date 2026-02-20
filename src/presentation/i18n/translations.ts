@@ -6,6 +6,10 @@ const hu = {
   "language.switcherAriaLabel": "Nyelvválasztó",
   "language.hu": "HU",
   "language.en": "EN",
+  "sound.label": "Hang",
+  "sound.on": "BE",
+  "sound.off": "KI",
+  "sound.toggleAriaLabel": "Hanghatások kapcsoló",
   "home.heroCopy":
     "Válassz útvonalat vagy indíts egy állomáson leolvasott QR-kóddal. Egy eszközön egyszerre csak egy aktív játék futhat.",
   "home.playerAliasLabel": "Játékosnév",
@@ -100,6 +104,10 @@ const en: Record<TranslationKey, string> = {
   "language.switcherAriaLabel": "Language switcher",
   "language.hu": "HU",
   "language.en": "EN",
+  "sound.label": "SFX",
+  "sound.on": "ON",
+  "sound.off": "OFF",
+  "sound.toggleAriaLabel": "Sound effects toggle",
   "home.heroCopy":
     "Pick a route or start from a scanned station QR code. Only one active run is allowed per device.",
   "home.playerAliasLabel": "Player alias",

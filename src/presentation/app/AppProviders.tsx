@@ -4,6 +4,7 @@ import type { AppServices } from "@/application/contracts/app-services.contract"
 import { LanguageProvider } from "@/presentation/app/LanguageContext";
 import { QuestRuntimeProvider } from "@/presentation/app/QuestRuntimeContext";
 import { ServicesProvider } from "@/presentation/app/ServicesContext";
+import { SoundProvider } from "@/presentation/app/SoundContext";
 import { GlobalErrorBoundary } from "@/presentation/components/system/GlobalErrorBoundary";
 
 interface AppProvidersProps {
@@ -23,9 +24,11 @@ function AppProviders({ children, services }: AppProvidersProps): JSX.Element {
   return (
     <ServicesProvider services={services}>
       <LanguageProvider>
-        <QuestRuntimeProvider>
-          <GlobalErrorBoundary onError={handleError}>{children}</GlobalErrorBoundary>
-        </QuestRuntimeProvider>
+        <SoundProvider>
+          <QuestRuntimeProvider>
+            <GlobalErrorBoundary onError={handleError}>{children}</GlobalErrorBoundary>
+          </QuestRuntimeProvider>
+        </SoundProvider>
       </LanguageProvider>
     </ServicesProvider>
   );
