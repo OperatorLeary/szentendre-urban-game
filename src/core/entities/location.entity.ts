@@ -1,11 +1,15 @@
 import {
   MAX_LOCATION_ANSWER_LENGTH,
   MAX_LOCATION_CODE_LENGTH,
+  MAX_LOCATION_INSTRUCTION_BRIEF_LENGTH,
+  MAX_LOCATION_INSTRUCTION_FULL_LENGTH,
   MAX_LOCATION_NAME_LENGTH,
   MAX_LOCATION_QUESTION_LENGTH,
   MAX_LOCATION_RADIUS_METERS,
   MIN_LOCATION_ANSWER_LENGTH,
   MIN_LOCATION_CODE_LENGTH,
+  MIN_LOCATION_INSTRUCTION_BRIEF_LENGTH,
+  MIN_LOCATION_INSTRUCTION_FULL_LENGTH,
   MIN_LOCATION_NAME_LENGTH,
   MIN_LOCATION_QUESTION_LENGTH,
   MIN_LOCATION_RADIUS_METERS
@@ -35,6 +39,10 @@ export interface LocationProps {
   readonly qrToken: QrToken;
   readonly questionPrompt: string;
   readonly questionPromptHu: string | null;
+  readonly instructionBrief: string | null;
+  readonly instructionBriefHu: string | null;
+  readonly instructionFull: string | null;
+  readonly instructionFullHu: string | null;
   readonly expectedAnswers: readonly string[];
   readonly isActive: boolean;
   readonly createdAt: Date;
@@ -50,6 +58,10 @@ export class Location extends Entity<LocationId> {
   public readonly qrToken: QrToken;
   public readonly questionPrompt: string;
   public readonly questionPromptHu: string | null;
+  public readonly instructionBrief: string | null;
+  public readonly instructionBriefHu: string | null;
+  public readonly instructionFull: string | null;
+  public readonly instructionFullHu: string | null;
   public readonly expectedAnswers: readonly string[];
   private readonly normalizedExpectedAnswers: readonly string[];
   public readonly isActive: boolean;
@@ -85,6 +97,42 @@ export class Location extends Entity<LocationId> {
             "questionPromptHu",
             MIN_LOCATION_QUESTION_LENGTH,
             MAX_LOCATION_QUESTION_LENGTH
+          );
+    const normalizedInstructionBrief: string | null =
+      props.instructionBrief === null
+        ? null
+        : normalizeNonEmptyText(
+            props.instructionBrief,
+            "instructionBrief",
+            MIN_LOCATION_INSTRUCTION_BRIEF_LENGTH,
+            MAX_LOCATION_INSTRUCTION_BRIEF_LENGTH
+          );
+    const normalizedInstructionBriefHu: string | null =
+      props.instructionBriefHu === null
+        ? null
+        : normalizeNonEmptyText(
+            props.instructionBriefHu,
+            "instructionBriefHu",
+            MIN_LOCATION_INSTRUCTION_BRIEF_LENGTH,
+            MAX_LOCATION_INSTRUCTION_BRIEF_LENGTH
+          );
+    const normalizedInstructionFull: string | null =
+      props.instructionFull === null
+        ? null
+        : normalizeNonEmptyText(
+            props.instructionFull,
+            "instructionFull",
+            MIN_LOCATION_INSTRUCTION_FULL_LENGTH,
+            MAX_LOCATION_INSTRUCTION_FULL_LENGTH
+          );
+    const normalizedInstructionFullHu: string | null =
+      props.instructionFullHu === null
+        ? null
+        : normalizeNonEmptyText(
+            props.instructionFullHu,
+            "instructionFullHu",
+            MIN_LOCATION_INSTRUCTION_FULL_LENGTH,
+            MAX_LOCATION_INSTRUCTION_FULL_LENGTH
           );
     const normalizedExpectedAnswers: readonly string[] = Array.from(
       new Set(
@@ -129,6 +177,10 @@ export class Location extends Entity<LocationId> {
     this.qrToken = props.qrToken;
     this.questionPrompt = normalizedQuestionPrompt;
     this.questionPromptHu = normalizedQuestionPromptHu;
+    this.instructionBrief = normalizedInstructionBrief;
+    this.instructionBriefHu = normalizedInstructionBriefHu;
+    this.instructionFull = normalizedInstructionFull;
+    this.instructionFullHu = normalizedInstructionFullHu;
     this.expectedAnswers = normalizedExpectedAnswers;
     this.normalizedExpectedAnswers = normalizedExpectedAnswers;
     this.isActive = props.isActive;

@@ -77,6 +77,9 @@ const hu = {
   "quest.navigationMapMode": "Térkép",
   "quest.navigationTextHint":
     "Kövesd a leírást, és keresd fel a(z) {stationSequence}. állomást: {stationName}.",
+  "quest.navigationDetailsToggle": "Részletes leírás megnyitása",
+  "quest.navigationDetailsMissing":
+    "Ehhez az állomáshoz még nincs hosszú leírás feltöltve.",
   "quest.navigationTextOnlyHint":
     "Szöveges mód aktív. Ha elakadsz, kapcsold be a térképes súgót.",
   "quest.questionTitle": "Kérdés",
@@ -194,6 +197,9 @@ const en: Record<TranslationKey, string> = {
   "quest.navigationMapMode": "Map hint",
   "quest.navigationTextHint":
     "Follow the instructions and reach station {stationSequence}: {stationName}.",
+  "quest.navigationDetailsToggle": "Open detailed instructions",
+  "quest.navigationDetailsMissing":
+    "No long instruction text has been added for this station yet.",
   "quest.navigationTextOnlyHint":
     "Text mode is active. If needed, switch on the map hint.",
   "quest.questionTitle": "Question",

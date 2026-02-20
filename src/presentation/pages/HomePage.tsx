@@ -174,7 +174,10 @@ function HomePage(): JSX.Element {
 
       play("tap");
       setStoredAlias(aliasValidation.normalizedAlias);
-      void navigate(toRouteLocationPath(parsedPayload.routeSlug, parsedPayload.locationSlug));
+      void navigate({
+        pathname: toRouteLocationPath(parsedPayload.routeSlug, parsedPayload.locationSlug),
+        search: "?entry=qr"
+      });
     },
     [navigate, play, playerAlias, t]
   );

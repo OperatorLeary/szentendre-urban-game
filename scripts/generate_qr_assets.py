@@ -11,6 +11,7 @@ Outputs:
 from __future__ import annotations
 
 import argparse
+import csv
 import html
 import re
 from dataclasses import dataclass
@@ -60,6 +61,45 @@ def parse_location_qr_records(seed_sql: str) -> list[QrRecord]:
                 payload=match.group("payload").strip(),
             )
         )
+
+    return records
+
+
+def parse_csv_qr_records(csv_path: Path) -> list[QrRecord]:
+    if not csv_path.exists():
+        raise ValueError(f"CSV file not found: {csv_path}")
+
+    with csv_path.open("r", encoding="utf-8-sig", newline="") as csv_file:
+        reader = csv.DictReader(csv_file)
+        if reader.fieldnames is None:
+            raise ValueError("CSV file has no header row.")
+
+        normalized_header = {name.strip().lower(): name for name in reader.fieldnames}
+        slug_key = normalized_header.get("slug")
+        name_key = normalized_header.get("name")
+        payload_key = (
+            normalized_header.get("qr_code_value")
+            or normalized_header.get("payload")
+            or normalized_header.get("qr")
+        )
+
+        if slug_key is None or name_key is None or payload_key is None:
+            raise ValueError(
+                "CSV must include columns: slug, name, qr_code_value (or payload)."
+            )
+
+        records: list[QrRecord] = []
+        for row in reader:
+            slug = (row.get(slug_key) or "").strip()
+            name = (row.get(name_key) or "").strip()
+            payload = (row.get(payload_key) or "").strip()
+            if not slug or not name or not payload:
+                continue
+
+            records.append(QrRecord(slug=slug, name=name, payload=payload))
+
+    if not records:
+        raise ValueError("CSV did not contain any valid QR rows.")
 
     return records
 
@@ -199,7 +239,7 @@ def write_print_sheet(output_dir: Path, rendered: list[tuple[QrRecord, str]]) ->
     (output_dir / "print-sheet.html").write_text(html_content, encoding="utf-8")
 
 
-def write_readme(output_dir: Path, base_url: str | None) -> None:
+def write_readme(output_dir: Path, base_url: str | None, source_description: str) -> None:
     payload_mode = (
         f"Full URL mode (`--base-url {base_url}`)"
         if base_url is not None
@@ -207,7 +247,7 @@ def write_readme(output_dir: Path, base_url: str | None) -> None:
     )
     content = f"""# QR Print Assets
 
-Generated from `supabase/migrations/202602190002_phase5_seed_routes.sql`.
+Generated from {source_description}.
 
 Mode: {payload_mode}
 
@@ -232,9 +272,14 @@ python scripts/generate_qr_assets.py --base-url https://your-domain.com
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Generate printable QR assets.")
     parser.add_argument(
+        "--csv-file",
+        default=None,
+        help="Optional CSV file with columns slug,name,qr_code_value (or payload).",
+    )
+    parser.add_argument(
         "--seed-file",
         default="supabase/migrations/202602190002_phase5_seed_routes.sql",
-        help="Path to phase-5 seed SQL file.",
+        help="Path to seed SQL file (used when --csv-file is not provided).",
     )
     parser.add_argument(
         "--output-dir",
@@ -257,14 +302,22 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = parse_args()
-    seed_path = Path(args.seed_file)
     output_dir = Path(args.output_dir)
+    source_description: str
 
-    seed_sql = seed_path.read_text(encoding="utf-8")
-    records = parse_location_qr_records(seed_sql)
+    if args.csv_file is not None:
+        csv_path = Path(args.csv_file)
+        records = parse_csv_qr_records(csv_path)
+        source_description = f"`{csv_path.as_posix()}`"
+    else:
+        seed_path = Path(args.seed_file)
+        seed_sql = seed_path.read_text(encoding="utf-8")
+        records = parse_location_qr_records(seed_sql)
+        source_description = f"`{seed_path.as_posix()}`"
+
     rendered = write_qr_assets(records, output_dir, args.base_url, args.png_scale)
     write_print_sheet(output_dir, rendered)
-    write_readme(output_dir, args.base_url)
+    write_readme(output_dir, args.base_url, source_description)
 
     print(f"Generated {len(rendered)} QR records in: {output_dir}")
     for record, payload in rendered:

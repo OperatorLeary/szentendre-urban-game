@@ -20,6 +20,7 @@ export interface EnsureRunSessionRequest {
   readonly routeSlug: string;
   readonly locationSlug: string;
   readonly playerAlias: string;
+  readonly preferRequestedStart?: boolean;
 }
 
 export interface EnsureRunSessionResponse {
@@ -53,6 +54,25 @@ export class EnsureRunSessionUseCase
 {
   public constructor(private readonly dependencies: EnsureRunSessionDependencies) {}
 
+  private async createRunAtRequestedLocation(
+    route: Route,
+    requestedLocation: Location,
+    playerAlias: string
+  ): Promise<Run> {
+    const newRun = new Run({
+      id: toRunId(generateRunIdentifier()),
+      routeId: route.id,
+      playerAlias,
+      startLocationId: requestedLocation.id,
+      currentSequenceIndex: requestedLocation.sequenceNumber,
+      status: RunStatus.Active,
+      startedAt: this.dependencies.clock.now(),
+      completedAt: null
+    });
+
+    return this.dependencies.runRepository.create(newRun);
+  }
+
   public async execute(
     request: EnsureRunSessionRequest
   ): Promise<EnsureRunSessionResponse> {
@@ -83,17 +103,10 @@ export class EnsureRunSessionUseCase
 
     let run: Run | null = await this.dependencies.runRepository.findActiveForCurrentDevice();
     if (run === null) {
-      run = await this.dependencies.runRepository.create(
-        new Run({
-          id: toRunId(generateRunIdentifier()),
-          routeId: route.id,
-          playerAlias: request.playerAlias,
-          startLocationId: requestedLocation.id,
-          currentSequenceIndex: requestedLocation.sequenceNumber,
-          status: RunStatus.Active,
-          startedAt: this.dependencies.clock.now(),
-          completedAt: null
-        })
+      run = await this.createRunAtRequestedLocation(
+        route,
+        requestedLocation,
+        request.playerAlias
       );
 
       this.dependencies.logger.info("New run created from route session request.", {
@@ -125,6 +138,41 @@ export class EnsureRunSessionUseCase
           activeNextLocationSlug: activeSession.nextLocation?.slug ?? null
         }
       });
+    }
+
+    if (request.preferRequestedStart === true) {
+      const shouldRestartFromRequestedLocation =
+        run.startLocationId !== requestedLocation.id ||
+        run.currentSequenceIndex !== requestedLocation.sequenceNumber;
+
+      if (shouldRestartFromRequestedLocation) {
+        const abandonedRun: Run = run.abandon(this.dependencies.clock.now());
+        await this.dependencies.runRepository.update(abandonedRun);
+
+        this.dependencies.logger.info(
+          "Existing same-route run abandoned for QR entry restart.",
+          {
+            abandonedRunId: run.id,
+            routeSlug: route.slug,
+            requestedLocationSlug: requestedLocation.slug
+          }
+        );
+
+        run = await this.createRunAtRequestedLocation(
+          route,
+          requestedLocation,
+          request.playerAlias
+        );
+
+        this.dependencies.logger.info(
+          "Replacement run created from requested QR entry location.",
+          {
+            runId: run.id,
+            routeSlug: route.slug,
+            startLocationSlug: requestedLocation.slug
+          }
+        );
+      }
     }
 
     const [locations, checkins] = await Promise.all([

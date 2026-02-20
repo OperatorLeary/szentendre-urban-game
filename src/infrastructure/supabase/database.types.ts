@@ -51,6 +51,10 @@ export interface Database {
           qr_code_value: string;
           question_prompt: string;
           question_prompt_hu: string | null;
+          instruction_brief: string | null;
+          instruction_brief_hu: string | null;
+          instruction_full: string | null;
+          instruction_full_hu: string | null;
           expected_answer: string;
           expected_answers: string[] | null;
           is_active: boolean;
@@ -68,6 +72,10 @@ export interface Database {
           qr_code_value: string;
           question_prompt: string;
           question_prompt_hu?: string | null;
+          instruction_brief?: string | null;
+          instruction_brief_hu?: string | null;
+          instruction_full?: string | null;
+          instruction_full_hu?: string | null;
           expected_answer: string;
           expected_answers?: string[] | null;
           is_active?: boolean;
@@ -85,6 +93,10 @@ export interface Database {
           qr_code_value?: string;
           question_prompt?: string;
           question_prompt_hu?: string | null;
+          instruction_brief?: string | null;
+          instruction_brief_hu?: string | null;
+          instruction_full?: string | null;
+          instruction_full_hu?: string | null;
           expected_answer?: string;
           expected_answers?: string[] | null;
           is_active?: boolean;

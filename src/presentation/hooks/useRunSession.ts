@@ -16,6 +16,7 @@ interface UseRunSessionInput {
   readonly routeSlug: string;
   readonly locationSlug: string;
   readonly enabled: boolean;
+  readonly preferRequestedStart?: boolean;
 }
 
 interface UseRunSessionState {
@@ -167,7 +168,8 @@ export function useRunSession(input: UseRunSessionInput): UseRunSessionResult {
         await gameUseCases.ensureRunSession({
           routeSlug: input.routeSlug,
           locationSlug: input.locationSlug,
-          playerAlias: getStoredPlayerAlias()
+          playerAlias: getStoredPlayerAlias(),
+          preferRequestedStart: input.preferRequestedStart ?? false
         });
 
       setState({
@@ -194,7 +196,14 @@ export function useRunSession(input: UseRunSessionInput): UseRunSessionResult {
         errorContext
       });
     }
-  }, [gameUseCases, input.enabled, input.locationSlug, input.routeSlug, t]);
+  }, [
+    gameUseCases,
+    input.enabled,
+    input.locationSlug,
+    input.preferRequestedStart,
+    input.routeSlug,
+    t
+  ]);
 
   const setSession = useCallback((session: GameSessionSnapshot): void => {
     setState((previousState: UseRunSessionState): UseRunSessionState => {

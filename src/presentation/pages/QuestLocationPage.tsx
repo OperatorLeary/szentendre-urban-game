@@ -6,7 +6,7 @@ import {
   type ChangeEvent,
   type JSX
 } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import type { GameSessionSnapshot } from "@/core/models/game-session.model";
 import type { Location } from "@/core/entities/location.entity";
@@ -21,6 +21,7 @@ import { useQuestRuntime } from "@/presentation/hooks/useQuestRuntime";
 import { useRoute } from "@/presentation/hooks/useRoute";
 import { useRunControl } from "@/presentation/hooks/useRunControl";
 import { useRunSession } from "@/presentation/hooks/useRunSession";
+import type { AppLanguage } from "@/presentation/i18n/language.types";
 import { localizeRouteName } from "@/presentation/i18n/localize-route";
 import type { TranslationKey } from "@/presentation/i18n/translations";
 import { ROUTES, toRouteLocationPath } from "@/shared/config/routes";
@@ -57,6 +58,18 @@ function getNextLocationSlug(
   );
 }
 
+function resolveLocalizedStationText(
+  language: AppLanguage,
+  hungarianText: string | null,
+  defaultText: string | null
+): string | null {
+  if (language === "hu") {
+    return hungarianText ?? defaultText;
+  }
+
+  return defaultText ?? hungarianText;
+}
+
 function mapValidationReason(
   reason: string,
   translate: (key: TranslationKey) => string
@@ -85,6 +98,7 @@ function QuestLocationPage(): JSX.Element {
   const { language, t } = useLanguage();
   const { play } = useSound();
   const navigate = useNavigate();
+  const location = useLocation();
   const routeSelection = useRoute();
   const { updateState, resetState } = useQuestRuntime();
   const geolocation = useGeolocation();
@@ -98,10 +112,16 @@ function QuestLocationPage(): JSX.Element {
   );
   const runControl = useRunControl();
 
+  const preferRequestedStart = useMemo((): boolean => {
+    const params = new URLSearchParams(location.search);
+    return params.get("entry") === "qr";
+  }, [location.search]);
+
   const runSession = useRunSession({
     routeSlug: routeSelection.routeSlug,
     locationSlug: routeSelection.locationSlug,
-    enabled: routeSelection.isValid
+    enabled: routeSelection.isValid,
+    preferRequestedStart
   });
 
   useEffect((): void => {
@@ -343,10 +363,21 @@ function QuestLocationPage(): JSX.Element {
     language === "hu" && activeLocation.questionPromptHu !== null
       ? activeLocation.questionPromptHu
       : activeLocation.questionPrompt;
-  const navigationTextHint: string = t("quest.navigationTextHint", {
+  const fallbackNavigationTextHint: string = t("quest.navigationTextHint", {
     stationName: activeLocation.name,
     stationSequence: String(activeLocation.sequenceNumber)
   });
+  const localizedInstructionBrief: string =
+    resolveLocalizedStationText(
+      language,
+      activeLocation.instructionBriefHu,
+      activeLocation.instructionBrief
+    ) ?? fallbackNavigationTextHint;
+  const localizedInstructionFull: string | null = resolveLocalizedStationText(
+    language,
+    activeLocation.instructionFullHu,
+    activeLocation.instructionFull
+  );
   const progressRatio: string = `${String(runSession.data.session.completedLocations)}/${String(runSession.data.session.totalLocations)}`;
 
   return (
@@ -378,10 +409,10 @@ function QuestLocationPage(): JSX.Element {
       <section className="quest-panel">
         <div className="quest-navigation-header">
           <h2 className="quest-panel-title">{t("quest.navigationTitle")}</h2>
-          <div
-            className="quest-navigation-toggle"
-            role="group"
-            aria-label={t("quest.navigationTitle")}
+        <div
+          className="quest-navigation-toggle"
+          role="group"
+          aria-label={t("quest.navigationTitle")}
           >
             <button
               className={`theme-switcher-button ${
@@ -409,7 +440,15 @@ function QuestLocationPage(): JSX.Element {
             </button>
           </div>
         </div>
-        <p className="quest-copy">{navigationTextHint}</p>
+        <p className="quest-copy quest-instruction-brief">{localizedInstructionBrief}</p>
+        {localizedInstructionFull !== null ? (
+          <details className="quest-instruction-details">
+            <summary>{t("quest.navigationDetailsToggle")}</summary>
+            <p className="quest-copy quest-instruction-full">{localizedInstructionFull}</p>
+          </details>
+        ) : (
+          <p className="quest-muted">{t("quest.navigationDetailsMissing")}</p>
+        )}
         {navigationMode === "map" ? (
           <LocationMap
             locations={runSession.data.locations}
