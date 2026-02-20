@@ -1,0 +1,44 @@
+SZENTENDRE CITY QUEST - MEGVALOSITOTT FUNKCIOK (ROVID OSSZEFOGLALO)
+
+1) Projekt cel
+- Mobilra optimalizalt, telepitheto webalkalmazas (PWA), amely varosi allomasok kozotti, utvonal-alapu kalandjatekot valosit meg.
+
+2) Fobb felhasznaloi funkciok
+- Utvonalvalasztas (rovid / kozepes / hosszu).
+- Jatek inditasa allomas QR-kodjaval is.
+- Kotott allomassorrend kezelese (nem lehet tetszolegesen atugrani).
+- GPS-alapu ellenorzes (Haversine tavolsagszamitas, alap sugar: 40 m).
+- QR felulbiralas, ha GPS ellenorzes nem sikeres.
+- Allomasonkent kerdes + valaszellenorzes.
+- Haladas kovetese (kesz allomasok, kovetkezo allomas).
+- Hibabejelentes (telemetriai adatokkal).
+- Futas feladasa kliens oldalon (megerosito dialogussal).
+
+3) Nyelvi tamogatas
+- Magyar az alapertelmezett nyelv.
+- Angol-magyar nyelvvaltas a feluleten.
+- Kezdooldalon az utvonalak nevei/leirasai is lokalizalva vannak.
+- Tobb elfogadott valasz tamogatasa (angol + magyar valtozatok).
+
+4) QR-kod rendszer
+- Kameraalapu QR-szkenner integralva (teljes kepernyos nezetben).
+- Nyomtathato QR-csomag generalva (SVG + PNG + print sheet).
+- Az allomas QR-kodok teljes URL-cimet is tudnak tartalmazni, ezert kozvetlenul indulhat a jatek.
+
+5) Architektura es kodminoseg
+- Clean Architecture retegezett struktura:
+  core / application / infrastructure / presentation / shared.
+- Domain logika elvalasztva a UI-tol.
+- Repository minta, szolgaltatas absztrakciok, TypeScript strict beallitasok.
+- Kozponti hibakezeles es naplozas.
+
+6) Adatbazis es biztonsag
+- Supabase Postgres schema migraciokkal.
+- RLS policyk beallitva.
+- Fo tablaks: routes, locations, route_locations, runs, checkins, bug_reports.
+- Egy eszkoz = egyszerre egy aktiv futas szabaly ervenyesitve.
+
+7) Uzemeltetes
+- Cloudflare Pages kompatibilis build/deploy (React + Vite).
+- PWA konfiguracio (manifest + service worker + offline cache).
+

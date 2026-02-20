@@ -8,6 +8,7 @@ import type { RouteRepositoryPort } from "@/application/ports/route-repository.p
 import type { RunRepositoryPort } from "@/application/ports/run-repository.port";
 import { CheckinContextLoaderService } from "@/application/services/checkin-context-loader.service";
 import {
+  AbandonActiveRunUseCase,
   EnsureRunSessionUseCase,
   GetRunProgressUseCase,
   ListRoutesUseCase,
@@ -62,6 +63,11 @@ export function createGameUseCases(
     logger: input.logger,
     clock: input.clock
   });
+  const abandonActiveRunUseCase = new AbandonActiveRunUseCase({
+    runRepository: input.repositories.runRepository,
+    logger: input.logger,
+    clock: input.clock
+  });
   const getRunProgressUseCase = new GetRunProgressUseCase({
     runRepository: input.repositories.runRepository,
     locationRepository: input.repositories.locationRepository,
@@ -97,6 +103,9 @@ export function createGameUseCases(
   return {
     async listRoutes() {
       return listRoutesUseCase.execute({});
+    },
+    async abandonActiveRun() {
+      return abandonActiveRunUseCase.execute({});
     },
     async ensureRunSession(request) {
       return ensureRunSessionUseCase.execute(request);

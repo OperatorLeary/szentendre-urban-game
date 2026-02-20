@@ -8,6 +8,7 @@ export * from "@/application/ports/logger.port";
 export * from "@/application/ports/route-repository.port";
 export * from "@/application/ports/run-repository.port";
 export * from "@/application/services/checkin-context-loader.service";
+export * from "@/application/use-cases/abandon-active-run.use-case";
 export * from "@/application/use-cases/ensure-run-session.use-case";
 export * from "@/application/use-cases/get-run-progress.use-case";
 export * from "@/application/use-cases/list-routes.use-case";

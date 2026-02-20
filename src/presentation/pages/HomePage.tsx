@@ -11,47 +11,13 @@ import type { RouteOverview } from "@/application/use-cases/list-routes.use-case
 import { useLanguage } from "@/presentation/app/LanguageContext";
 import { QrScannerPanel } from "@/presentation/components/quest/QrScannerPanel";
 import { useAppServices } from "@/presentation/hooks/useAppServices";
-import type { TranslationKey } from "@/presentation/i18n/translations";
+import { localizeRouteDisplay } from "@/presentation/i18n/localize-route";
 import {
   DEFAULT_PLAYER_ALIAS,
   PLAYER_ALIAS_STORAGE_KEY
 } from "@/shared/constants/app.constants";
 import { toRouteLocationPath } from "@/shared/config/routes";
 import { parseRouteLocationPayload } from "@/shared/utils/validation-guard";
-
-interface LocalizedRouteDisplay {
-  readonly name: string;
-  readonly description: string;
-}
-
-function localizeRouteDisplay(
-  route: RouteOverview,
-  fallbackDescription: string,
-  t: (key: TranslationKey) => string
-): LocalizedRouteDisplay {
-  switch (route.slug) {
-    case "short":
-      return {
-        name: t("home.route.short.name"),
-        description: t("home.route.short.description")
-      };
-    case "medium":
-      return {
-        name: t("home.route.medium.name"),
-        description: t("home.route.medium.description")
-      };
-    case "long":
-      return {
-        name: t("home.route.long.name"),
-        description: t("home.route.long.description")
-      };
-    default:
-      return {
-        name: route.name,
-        description: route.description ?? fallbackDescription
-      };
-  }
-}
 
 function getStoredAlias(): string {
   if (typeof window === "undefined") {
@@ -130,7 +96,12 @@ function HomePage(): JSX.Element {
   const startRoute = (route: RouteOverview): void => {
     const routeStartLocationSlug: string | null = route.firstLocationSlug;
     if (routeStartLocationSlug === null) {
-      const routeDisplay = localizeRouteDisplay(route, t("home.defaultRouteDescription"), t);
+      const routeDisplay = localizeRouteDisplay(
+        route.slug,
+        route.name,
+        route.description ?? t("home.defaultRouteDescription"),
+        t
+      );
       setErrorMessage(
         t("home.routeMissingFirstLocation", {
           routeName: routeDisplay.name
@@ -199,8 +170,9 @@ function HomePage(): JSX.Element {
         <div className="route-grid">
           {routes.map((route: RouteOverview): JSX.Element => {
             const routeDisplay = localizeRouteDisplay(
-              route,
-              t("home.defaultRouteDescription"),
+              route.slug,
+              route.name,
+              route.description ?? t("home.defaultRouteDescription"),
               t
             );
 

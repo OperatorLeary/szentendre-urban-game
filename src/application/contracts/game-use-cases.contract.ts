@@ -1,4 +1,7 @@
 import type {
+  AbandonActiveRunResponse
+} from "@/application/use-cases/abandon-active-run.use-case";
+import type {
   EnsureRunSessionRequest,
   EnsureRunSessionResponse
 } from "@/application/use-cases/ensure-run-session.use-case";
@@ -24,6 +27,7 @@ import type {
 
 export interface GameUseCases {
   listRoutes(): Promise<ListRoutesResponse>;
+  abandonActiveRun(): Promise<AbandonActiveRunResponse>;
   ensureRunSession(
     request: EnsureRunSessionRequest
   ): Promise<EnsureRunSessionResponse>;

@@ -1,5 +1,5 @@
 import { Suspense, lazy, type JSX } from "react";
-import { Route, Routes } from "react-router-dom";
+import { Route, Routes, useLocation } from "react-router-dom";
 
 import { BugReportFloatingButton } from "@/presentation/components/bug-report/BugReportFloatingButton";
 import { InstallPromptButton } from "@/presentation/components/system/InstallPromptButton";
@@ -16,17 +16,21 @@ const NotFoundPage = lazy(
 );
 
 function AppRouter(): JSX.Element {
+  const location = useLocation();
+
   return (
     <>
       <LanguageSwitcher />
       <InstallPromptButton />
       <BugReportFloatingButton />
       <Suspense fallback={<RouteFallback />}>
-        <Routes>
-          <Route path={ROUTES.home} element={<HomePage />} />
-          <Route path={ROUTES.routeLocation} element={<QuestLocationPage />} />
-          <Route path={ROUTES.notFound} element={<NotFoundPage />} />
-        </Routes>
+        <div className="route-stage" key={location.pathname}>
+          <Routes location={location}>
+            <Route path={ROUTES.home} element={<HomePage />} />
+            <Route path={ROUTES.routeLocation} element={<QuestLocationPage />} />
+            <Route path={ROUTES.notFound} element={<NotFoundPage />} />
+          </Routes>
+        </div>
       </Suspense>
     </>
   );

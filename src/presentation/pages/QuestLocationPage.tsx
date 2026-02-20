@@ -11,13 +11,16 @@ import { Link, useNavigate } from "react-router-dom";
 import type { GameSessionSnapshot } from "@/core/models/game-session.model";
 import type { Location } from "@/core/entities/location.entity";
 import { useLanguage } from "@/presentation/app/LanguageContext";
+import { AbandonRunDialog } from "@/presentation/components/quest/AbandonRunDialog";
 import { LocationMap } from "@/presentation/components/quest/LocationMap";
 import { QrScannerPanel } from "@/presentation/components/quest/QrScannerPanel";
 import { useGeolocation } from "@/presentation/hooks/useGeolocation";
 import { useLocationValidation } from "@/presentation/hooks/useLocationValidation";
 import { useQuestRuntime } from "@/presentation/hooks/useQuestRuntime";
 import { useRoute } from "@/presentation/hooks/useRoute";
+import { useRunControl } from "@/presentation/hooks/useRunControl";
 import { useRunSession } from "@/presentation/hooks/useRunSession";
+import { localizeRouteName } from "@/presentation/i18n/localize-route";
 import type { TranslationKey } from "@/presentation/i18n/translations";
 import { ROUTES, toRouteLocationPath } from "@/shared/config/routes";
 import { formatDistanceMeters } from "@/shared/utils/format-distance";
@@ -71,7 +74,9 @@ function QuestLocationPage(): JSX.Element {
   const [answerText, setAnswerText] = useState<string>("");
   const [qrPayload, setQrPayload] = useState<string>("");
   const [isScannerVisible, setIsScannerVisible] = useState<boolean>(false);
+  const [isAbandonDialogOpen, setIsAbandonDialogOpen] = useState<boolean>(false);
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
+  const runControl = useRunControl();
 
   const runSession = useRunSession({
     routeSlug: routeSelection.routeSlug,
@@ -259,6 +264,17 @@ function QuestLocationPage(): JSX.Element {
     [answerText, handleValidationSuccess, locationValidation, runSession.data, t]
   );
 
+  const handleConfirmAbandon = useCallback(async (): Promise<void> => {
+    const isSuccess: boolean = await runControl.abandonActiveRun();
+    if (!isSuccess) {
+      return;
+    }
+
+    setIsAbandonDialogOpen(false);
+    setFeedbackMessage(t("quest.abandonSuccess"));
+    navigate(ROUTES.home, { replace: true });
+  }, [navigate, runControl, t]);
+
   if (runSession.isLoading || runSession.data === null || activeLocation === null) {
     return (
       <main className="quest-shell">
@@ -279,12 +295,29 @@ function QuestLocationPage(): JSX.Element {
     runSession.data.session,
     runSession.data.locations
   );
+  const localizedRouteTitle: string = localizeRouteName(
+    runSession.data.route.slug,
+    runSession.data.route.name,
+    t
+  );
   const progressRatio: string = `${runSession.data.session.completedLocations}/${runSession.data.session.totalLocations}`;
 
   return (
     <main className="quest-shell">
       <section className="quest-panel">
-        <h1 className="quest-panel-title">{runSession.data.route.name}</h1>
+        <div className="quest-panel-header">
+          <h1 className="quest-panel-title">{localizedRouteTitle}</h1>
+          <button
+            className="quest-button quest-button--danger"
+            type="button"
+            onClick={(): void => {
+              runControl.resetAbandonError();
+              setIsAbandonDialogOpen(true);
+            }}
+          >
+            {t("quest.abandonJourney")}
+          </button>
+        </div>
         <p className="quest-muted">
           {t("quest.progress")}: {progressRatio} ({runSession.data.session.completionPercentage}
           %)
@@ -400,6 +433,18 @@ function QuestLocationPage(): JSX.Element {
           {t("quest.exitHome")}
         </Link>
       </section>
+
+      <AbandonRunDialog
+        isOpen={isAbandonDialogOpen}
+        isSubmitting={runControl.isAbandoning}
+        errorMessage={runControl.abandonErrorMessage}
+        onCancel={(): void => {
+          setIsAbandonDialogOpen(false);
+        }}
+        onConfirm={(): void => {
+          void handleConfirmAbandon();
+        }}
+      />
     </main>
   );
 }
