@@ -18,7 +18,7 @@ Use the same variables in both `Production` and `Preview` environments.
 This project includes `public/_redirects`:
 
 ```txt
-/* /index.html 200
+/* / 200
 ```
 
 That enables direct navigation to dynamic quest URLs such as:
