@@ -28,12 +28,19 @@ const SOUND_LIBRARY: Readonly<Record<QuestSound, readonly ToneSpec[]>> = Object.
   ],
   transition: [{ frequency: 520, durationMs: 38, volume: 0.02, type: "triangle" }],
   language_hu: [
-    { frequency: 470, durationMs: 62, volume: 0.032, type: "sine" },
-    { frequency: 390, durationMs: 88, volume: 0.029, type: "sine", delayMs: 66 }
+    { frequency: 196, durationMs: 360, volume: 0.014, type: "triangle" },
+    { frequency: 392, durationMs: 95, volume: 0.028, type: "triangle" },
+    { frequency: 494, durationMs: 92, volume: 0.026, type: "triangle", delayMs: 84 },
+    { frequency: 622, durationMs: 112, volume: 0.027, type: "sine", delayMs: 168 },
+    { frequency: 523, durationMs: 122, volume: 0.024, type: "sine", delayMs: 280 }
   ],
   language_en: [
-    { frequency: 620, durationMs: 56, volume: 0.031, type: "triangle" },
-    { frequency: 820, durationMs: 78, volume: 0.03, type: "triangle", delayMs: 62 }
+    { frequency: 196, durationMs: 340, volume: 0.013, type: "sine" },
+    { frequency: 392, durationMs: 86, volume: 0.026, type: "triangle" },
+    { frequency: 494, durationMs: 84, volume: 0.025, type: "triangle", delayMs: 76 },
+    { frequency: 587, durationMs: 94, volume: 0.026, type: "triangle", delayMs: 152 },
+    { frequency: 784, durationMs: 122, volume: 0.027, type: "sine", delayMs: 242 },
+    { frequency: 659, durationMs: 84, volume: 0.022, type: "sine", delayMs: 356 }
   ]
 });
 
