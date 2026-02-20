@@ -72,6 +72,13 @@ const hu = {
   "quest.backHome": "Vissza a kezdőoldalra",
   "quest.progress": "Haladás",
   "quest.station": "Állomás",
+  "quest.navigationTitle": "Tájékozódás",
+  "quest.navigationTextMode": "Szöveges",
+  "quest.navigationMapMode": "Térkép",
+  "quest.navigationTextHint":
+    "Kövesd a leírást, és keresd fel a(z) {stationSequence}. állomást: {stationName}.",
+  "quest.navigationTextOnlyHint":
+    "Szöveges mód aktív. Ha elakadsz, kapcsold be a térképes súgót.",
   "quest.questionTitle": "Kérdés",
   "quest.yourAnswerLabel": "A te válaszod",
   "quest.readingGps": "GPS olvasása...",
@@ -182,6 +189,13 @@ const en: Record<TranslationKey, string> = {
   "quest.backHome": "Back to home",
   "quest.progress": "Progress",
   "quest.station": "Station",
+  "quest.navigationTitle": "Navigation",
+  "quest.navigationTextMode": "Text",
+  "quest.navigationMapMode": "Map hint",
+  "quest.navigationTextHint":
+    "Follow the instructions and reach station {stationSequence}: {stationName}.",
+  "quest.navigationTextOnlyHint":
+    "Text mode is active. If needed, switch on the map hint.",
   "quest.questionTitle": "Question",
   "quest.yourAnswerLabel": "Your answer",
   "quest.readingGps": "Reading GPS...",

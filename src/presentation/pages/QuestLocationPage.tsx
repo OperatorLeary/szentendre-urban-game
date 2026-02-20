@@ -27,6 +27,21 @@ import { ROUTES, toRouteLocationPath } from "@/shared/config/routes";
 import { formatDistanceMeters } from "@/shared/utils/format-distance";
 import { calculateHaversineDistanceMeters } from "@/shared/utils/haversine-distance";
 
+type NavigationMode = "text" | "map";
+
+const NAVIGATION_MODE_STORAGE_KEY = "szentendre-city-quest-navigation-mode";
+
+function resolveInitialNavigationMode(): NavigationMode {
+  if (typeof window === "undefined") {
+    return "text";
+  }
+
+  const storedValue: string | null = window.localStorage.getItem(
+    NAVIGATION_MODE_STORAGE_KEY
+  );
+  return storedValue === "map" ? "map" : "text";
+}
+
 function getNextLocationSlug(
   session: GameSessionSnapshot,
   locations: readonly Location[]
@@ -78,6 +93,9 @@ function QuestLocationPage(): JSX.Element {
   const [isScannerVisible, setIsScannerVisible] = useState<boolean>(false);
   const [isAbandonDialogOpen, setIsAbandonDialogOpen] = useState<boolean>(false);
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
+  const [navigationMode, setNavigationMode] = useState<NavigationMode>(
+    resolveInitialNavigationMode
+  );
   const runControl = useRunControl();
 
   const runSession = useRunSession({
@@ -125,6 +143,14 @@ function QuestLocationPage(): JSX.Element {
       resetState();
     };
   }, [resetState]);
+
+  useEffect((): void => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    window.localStorage.setItem(NAVIGATION_MODE_STORAGE_KEY, navigationMode);
+  }, [navigationMode]);
 
   const locationValidation = useLocationValidation({
     runId: runSession.data?.run.id ?? "",
@@ -317,6 +343,10 @@ function QuestLocationPage(): JSX.Element {
     language === "hu" && activeLocation.questionPromptHu !== null
       ? activeLocation.questionPromptHu
       : activeLocation.questionPrompt;
+  const navigationTextHint: string = t("quest.navigationTextHint", {
+    stationName: activeLocation.name,
+    stationSequence: String(activeLocation.sequenceNumber)
+  });
   const progressRatio: string = `${String(runSession.data.session.completedLocations)}/${String(runSession.data.session.totalLocations)}`;
 
   return (
@@ -346,11 +376,49 @@ function QuestLocationPage(): JSX.Element {
       </section>
 
       <section className="quest-panel">
-        <LocationMap
-          locations={runSession.data.locations}
-          activeLocationId={activeLocation.id}
-          userPosition={geolocation.snapshot?.position ?? null}
-        />
+        <div className="quest-navigation-header">
+          <h2 className="quest-panel-title">{t("quest.navigationTitle")}</h2>
+          <div
+            className="quest-navigation-toggle"
+            role="group"
+            aria-label={t("quest.navigationTitle")}
+          >
+            <button
+              className={`theme-switcher-button ${
+                navigationMode === "text" ? "theme-switcher-button--active" : ""
+              }`}
+              type="button"
+              onClick={(): void => {
+                play("tap");
+                setNavigationMode("text");
+              }}
+            >
+              {t("quest.navigationTextMode")}
+            </button>
+            <button
+              className={`theme-switcher-button ${
+                navigationMode === "map" ? "theme-switcher-button--active" : ""
+              }`}
+              type="button"
+              onClick={(): void => {
+                play("tap");
+                setNavigationMode("map");
+              }}
+            >
+              {t("quest.navigationMapMode")}
+            </button>
+          </div>
+        </div>
+        <p className="quest-copy">{navigationTextHint}</p>
+        {navigationMode === "map" ? (
+          <LocationMap
+            locations={runSession.data.locations}
+            activeLocationId={activeLocation.id}
+            userPosition={geolocation.snapshot?.position ?? null}
+          />
+        ) : (
+          <p className="quest-muted">{t("quest.navigationTextOnlyHint")}</p>
+        )}
       </section>
 
       <section className="quest-panel">

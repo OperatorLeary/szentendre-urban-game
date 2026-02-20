@@ -6,3 +6,4 @@ Original prompt: things I don't like currently is when theme is on dark and I ho
 - 2026-02-20: 
 pm run build passed after CSS update. Attempted Playwright skill client verification, but it is unavailable in this environment because the playwright package is not installed.
 - 2026-02-20: Added phase 12 migration to harden alias moderation against numeric-affix bypasses (e.g. fasz67, 67fasz).
+- 2026-02-20: Implemented first-pass text-first navigation mode on quest page with optional map hint toggle (persisted in localStorage). Added HU/EN translations and layout styles.
