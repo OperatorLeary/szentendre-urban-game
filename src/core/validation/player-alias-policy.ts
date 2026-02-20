@@ -19,7 +19,7 @@ export interface PlayerAliasValidationResult {
 const URL_OR_CONTACT_PATTERN =
   /(https?:\/\/|www\.|[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,})/i;
 
-const BLOCKED_TOKENS = new Set<string>([
+const BLOCKED_TOKENS: readonly string[] = [
   "nazi",
   "hitler",
   "heil",
@@ -51,7 +51,7 @@ const BLOCKED_TOKENS = new Set<string>([
   "biden",
   "putin",
   "fidesz"
-]);
+];
 
 const BLOCKED_PHRASES: readonly string[] = [
   "mi hazank",
@@ -77,17 +77,19 @@ function hasBlockedContent(normalizedAliasForModeration: string): boolean {
     return false;
   }
 
-  const tokens: readonly string[] = normalizedAliasForModeration
-    .split(" ")
-    .filter((token: string): boolean => token.length > 0);
-
-  if (tokens.some((token: string): boolean => BLOCKED_TOKENS.has(token))) {
+  const compactAlias: string = normalizedAliasForModeration.replace(/[^a-z]+/g, "");
+  if (
+    BLOCKED_TOKENS.some((blockedToken: string): boolean =>
+      compactAlias.includes(blockedToken)
+    )
+  ) {
     return true;
   }
 
   const paddedAlias = ` ${normalizedAliasForModeration} `;
   return BLOCKED_PHRASES.some((phrase: string): boolean =>
-    paddedAlias.includes(` ${phrase} `)
+    paddedAlias.includes(` ${phrase} `) ||
+    compactAlias.includes(phrase.replace(/\s+/g, ""))
   );
 }
 
