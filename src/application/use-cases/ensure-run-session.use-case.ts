@@ -10,6 +10,7 @@ import type { Location } from "@/core/entities/location.entity";
 import type { Route } from "@/core/entities/route.entity";
 import { Run } from "@/core/entities/run.entity";
 import { ApplicationError } from "@/core/errors/app-error";
+import { APP_ERROR_CODES } from "@/core/errors/error-codes";
 import type { GameSessionSnapshot } from "@/core/models/game-session.model";
 import { GameSessionService } from "@/core/services/game-session.service";
 import { RunStatus } from "@/core/enums/run-status.enum";
@@ -118,6 +119,7 @@ export class EnsureRunSessionUseCase
         });
 
       throw new ApplicationError("An active run already exists on another route.", {
+        errorCode: APP_ERROR_CODES.activeRunConflictOtherRoute,
         context: {
           activeRouteSlug: activeRoute?.slug ?? null,
           activeNextLocationSlug: activeSession.nextLocation?.slug ?? null

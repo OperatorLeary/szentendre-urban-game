@@ -1,6 +1,10 @@
 import type { LoggerPort } from "@/application/ports/logger.port";
 import type { RunRepositoryPort } from "@/application/ports/run-repository.port";
 import type { Run } from "@/core/entities/run.entity";
+import {
+  APP_ERROR_CODES,
+  type AppErrorCode
+} from "@/core/errors/error-codes";
 import type { RunId } from "@/core/types/identifiers.type";
 import { RepositoryError } from "@/infrastructure/errors/repository.error";
 import {
@@ -14,6 +18,64 @@ import { SUPABASE_TABLES } from "@/infrastructure/supabase/supabase-table-names"
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 type RunRow = Tables["runs"]["Row"];
+
+function extractErrorSignal(error: unknown): string {
+  if (typeof error === "string") {
+    return error;
+  }
+
+  if (error instanceof Error) {
+    return `${error.message} ${extractErrorSignal((error as { cause?: unknown }).cause)}`;
+  }
+
+  if (typeof error === "object" && error !== null) {
+    const errorLike = error as {
+      readonly message?: unknown;
+      readonly details?: unknown;
+      readonly hint?: unknown;
+      readonly code?: unknown;
+      readonly cause?: unknown;
+    };
+
+    return [
+      extractErrorSignal(errorLike.message),
+      extractErrorSignal(errorLike.details),
+      extractErrorSignal(errorLike.hint),
+      extractErrorSignal(errorLike.code),
+      extractErrorSignal(errorLike.cause)
+    ].join(" ");
+  }
+
+  return "";
+}
+
+function resolveRunCreateErrorCode(error: unknown): AppErrorCode {
+  const errorSignal: string = extractErrorSignal(error).toLowerCase();
+
+  if (
+    errorSignal.includes("player_alias_contains_blocked_content") ||
+    errorSignal.includes("contains_blocked_content")
+  ) {
+    return APP_ERROR_CODES.playerAliasBlockedContent;
+  }
+
+  if (
+    errorSignal.includes("player_alias_contact_or_url_not_allowed") ||
+    errorSignal.includes("contains_url_or_contact")
+  ) {
+    return APP_ERROR_CODES.playerAliasLinkOrContact;
+  }
+
+  if (errorSignal.includes("runs_player_alias_length_chk")) {
+    return APP_ERROR_CODES.playerAliasInvalidLength;
+  }
+
+  if (errorSignal.includes("uq_runs_active_per_device")) {
+    return APP_ERROR_CODES.activeRunAlreadyExistsForDevice;
+  }
+
+  return APP_ERROR_CODES.runCreateFailed;
+}
 
 export class SupabaseRunRepository implements RunRepositoryPort {
   public constructor(
@@ -105,6 +167,7 @@ export class SupabaseRunRepository implements RunRepositoryPort {
         {
           repository: "SupabaseRunRepository",
           operation: "create",
+          errorCode: resolveRunCreateErrorCode(error),
           metadata: {
             runId: run.id,
             routeId: run.routeId

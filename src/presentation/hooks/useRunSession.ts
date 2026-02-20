@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import type { EnsureRunSessionResponse } from "@/application/use-cases/ensure-run-session.use-case";
+import { APP_ERROR_CODES } from "@/core/errors/error-codes";
 import { validatePlayerAlias } from "@/core/validation/player-alias-policy";
 import { AppError } from "@/core/errors/app-error";
 import type { GameSessionSnapshot } from "@/core/models/game-session.model";
@@ -39,6 +40,89 @@ interface UseRunSessionResult {
   readonly session: GameSessionSnapshot | null;
   refresh: () => Promise<void>;
   setSession: (session: GameSessionSnapshot) => void;
+}
+
+function extractErrorSignal(error: unknown): string {
+  if (typeof error === "string") {
+    return error;
+  }
+
+  if (error instanceof Error) {
+    return [
+      error.message,
+      extractErrorSignal((error as { cause?: unknown }).cause)
+    ]
+      .filter((part: string): boolean => part.trim().length > 0)
+      .join(" ");
+  }
+
+  if (typeof error === "object" && error !== null) {
+    const errorLike = error as {
+      readonly message?: unknown;
+      readonly details?: unknown;
+      readonly hint?: unknown;
+      readonly code?: unknown;
+      readonly cause?: unknown;
+    };
+
+    return [
+      extractErrorSignal(errorLike.message),
+      extractErrorSignal(errorLike.details),
+      extractErrorSignal(errorLike.hint),
+      extractErrorSignal(errorLike.code),
+      extractErrorSignal(errorLike.cause)
+    ]
+      .filter((part: string): boolean => part.trim().length > 0)
+      .join(" ");
+  }
+
+  return "";
+}
+
+function getFriendlyRunSessionErrorMessage(
+  error: unknown,
+  t: ReturnType<typeof useLanguage>["t"]
+): string | null {
+  if (error instanceof AppError) {
+    switch (error.errorCode) {
+      case APP_ERROR_CODES.playerAliasBlockedContent:
+        return t("home.playerAliasBlockedContent");
+      case APP_ERROR_CODES.playerAliasLinkOrContact:
+        return t("home.playerAliasContainsLinkOrContact");
+      case APP_ERROR_CODES.playerAliasInvalidLength:
+        return t("home.playerAliasInvalidLength");
+      default:
+        break;
+    }
+  }
+
+  const errorSignal: string = extractErrorSignal(error).toLowerCase();
+  if (errorSignal.length === 0) {
+    return null;
+  }
+
+  if (
+    errorSignal.includes("player_alias_contains_blocked_content") ||
+    errorSignal.includes("contains_blocked_content")
+  ) {
+    return t("home.playerAliasBlockedContent");
+  }
+
+  if (
+    errorSignal.includes("player_alias_contact_or_url_not_allowed") ||
+    errorSignal.includes("contains_url_or_contact")
+  ) {
+    return t("home.playerAliasContainsLinkOrContact");
+  }
+
+  if (
+    errorSignal.includes("runs_player_alias_length_chk") ||
+    (errorSignal.includes("player alias") && errorSignal.includes("length"))
+  ) {
+    return t("home.playerAliasInvalidLength");
+  }
+
+  return null;
 }
 
 function getStoredPlayerAlias(): string {
@@ -94,10 +178,12 @@ export function useRunSession(input: UseRunSessionInput): UseRunSessionResult {
       });
     } catch (error) {
       const fallbackMessage = t("runSession.loadFailed");
+      const mappedMessage: string | null = getFriendlyRunSessionErrorMessage(error, t);
       const message: string =
-        error instanceof Error && error.message.trim().length > 0
+        mappedMessage ??
+        (error instanceof Error && error.message.trim().length > 0
           ? error.message
-          : fallbackMessage;
+          : fallbackMessage);
       const errorContext: Readonly<Record<string, unknown>> | null =
         error instanceof AppError ? error.context : null;
 
