@@ -1,12 +1,20 @@
 import type { JSX } from "react";
 
 import { useLanguage } from "@/presentation/app/LanguageContext";
+import { useSound } from "@/presentation/app/SoundContext";
 import type { AppLanguage } from "@/presentation/i18n/language.types";
 
 export function LanguageSwitcher(): JSX.Element {
   const { language, setLanguage, t } = useLanguage();
+  const { play, unlock } = useSound();
 
   const setSelectedLanguage = (selectedLanguage: AppLanguage): void => {
+    if (selectedLanguage === language) {
+      return;
+    }
+
+    unlock();
+    play("tap");
     setLanguage(selectedLanguage);
   };
 

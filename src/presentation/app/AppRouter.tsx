@@ -1,8 +1,17 @@
-import { Suspense, lazy, useEffect, useRef, type JSX } from "react";
+import {
+  Suspense,
+  lazy,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type JSX,
+} from "react";
 import { Route, Routes, useLocation, useNavigationType } from "react-router-dom";
 
 import { useSound } from "@/presentation/app/SoundContext";
 import { BugReportFloatingButton } from "@/presentation/components/bug-report/BugReportFloatingButton";
+import { IntroSplash } from "@/presentation/components/system/IntroSplash";
 import { InstallPromptButton } from "@/presentation/components/system/InstallPromptButton";
 import { LanguageSwitcher } from "@/presentation/components/system/LanguageSwitcher";
 import { SoundToggleButton } from "@/presentation/components/system/SoundToggleButton";
@@ -17,11 +26,20 @@ const NotFoundPage = lazy(
   async () => import("@/presentation/pages/NotFoundPage")
 );
 
+const INTRO_SPLASH_SESSION_KEY = "szentendre-city-quest-intro-shown";
+
 function AppRouter(): JSX.Element {
   const location = useLocation();
   const navigationType = useNavigationType();
   const { play } = useSound();
   const previousPathnameRef = useRef<string | null>(null);
+  const [isIntroVisible, setIsIntroVisible] = useState<boolean>(() => {
+    if (typeof window === "undefined") {
+      return false;
+    }
+
+    return window.sessionStorage.getItem(INTRO_SPLASH_SESSION_KEY) !== "1";
+  });
 
   useEffect((): void => {
     const previousPathname: string | null = previousPathnameRef.current;
@@ -37,8 +55,16 @@ function AppRouter(): JSX.Element {
       ? "route-stage route-stage--back"
       : "route-stage route-stage--forward";
 
+  const handleIntroComplete = useCallback((): void => {
+    setIsIntroVisible(false);
+    if (typeof window !== "undefined") {
+      window.sessionStorage.setItem(INTRO_SPLASH_SESSION_KEY, "1");
+    }
+  }, []);
+
   return (
     <>
+      <IntroSplash isVisible={isIntroVisible} onComplete={handleIntroComplete} />
       <div className="top-controls">
         <LanguageSwitcher />
         <SoundToggleButton />

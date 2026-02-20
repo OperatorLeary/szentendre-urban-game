@@ -17,6 +17,11 @@ export function IntroSplash({ isVisible, onComplete }: IntroSplashProps): JSX.El
       return;
     }
 
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      onComplete();
+      return;
+    }
+
     const timeoutId = window.setTimeout((): void => {
       onComplete();
     }, SPLASH_DURATION_MS);
@@ -31,7 +36,7 @@ export function IntroSplash({ isVisible, onComplete }: IntroSplashProps): JSX.El
   }
 
   return (
-    <section className="intro-splash" aria-hidden="true">
+    <section className="intro-splash" aria-hidden="true" onPointerDown={onComplete}>
       <div className="intro-splash__mark">
         <span className="intro-splash__dot" />
       </div>
@@ -39,4 +44,3 @@ export function IntroSplash({ isVisible, onComplete }: IntroSplashProps): JSX.El
     </section>
   );
 }
-
