@@ -24,6 +24,7 @@ const SOUND_LIBRARY: Readonly<Record<QuestSound, readonly ToneSpec[]>> = Object.
 });
 
 interface WindowWithWebkitAudioContext extends Window {
+  readonly AudioContext?: AudioContextFactory;
   readonly webkitAudioContext?: AudioContextFactory;
 }
 
@@ -99,16 +100,13 @@ export class SoundEngine {
   private resolveAudioContextClass(
     targetWindow: Window
   ): AudioContextFactory | null {
-    if ("AudioContext" in targetWindow) {
-      return targetWindow.AudioContext;
-    }
-
-    const webkitWindow = targetWindow as WindowWithWebkitAudioContext;
-    if (webkitWindow.webkitAudioContext !== undefined) {
-      return webkitWindow.webkitAudioContext;
+    const audioWindow = targetWindow as WindowWithWebkitAudioContext;
+    const constructorCandidate =
+      audioWindow.AudioContext ?? audioWindow.webkitAudioContext;
+    if (typeof constructorCandidate === "function") {
+      return constructorCandidate;
     }
 
     return null;
   }
 }
-
