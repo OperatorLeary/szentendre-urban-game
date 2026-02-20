@@ -7,7 +7,13 @@ import {
   useState,
   type JSX,
 } from "react";
-import { Route, Routes, useLocation, useNavigationType } from "react-router-dom";
+import {
+  NavigationType,
+  Route,
+  Routes,
+  useLocation,
+  useNavigationType
+} from "react-router-dom";
 
 import { useSound } from "@/presentation/app/SoundContext";
 import { BugReportFloatingButton } from "@/presentation/components/bug-report/BugReportFloatingButton";
@@ -52,7 +58,7 @@ function AppRouter(): JSX.Element {
   }, [location.pathname, play]);
 
   const routeStageClassName =
-    navigationType === "POP"
+    navigationType === NavigationType.Pop
       ? "route-stage route-stage--back"
       : "route-stage route-stage--forward";
 

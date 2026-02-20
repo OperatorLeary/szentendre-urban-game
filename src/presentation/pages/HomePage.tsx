@@ -151,7 +151,7 @@ function HomePage(): JSX.Element {
     });
 
     play("tap");
-    navigate(toRouteLocationPath(route.slug, routeStartLocationSlug));
+    void navigate(toRouteLocationPath(route.slug, routeStartLocationSlug));
   };
 
   const continueWithQrPayload = useCallback(
@@ -174,7 +174,7 @@ function HomePage(): JSX.Element {
 
       play("tap");
       setStoredAlias(aliasValidation.normalizedAlias);
-      navigate(toRouteLocationPath(parsedPayload.routeSlug, parsedPayload.locationSlug));
+      void navigate(toRouteLocationPath(parsedPayload.routeSlug, parsedPayload.locationSlug));
     },
     [navigate, play, playerAlias, t]
   );

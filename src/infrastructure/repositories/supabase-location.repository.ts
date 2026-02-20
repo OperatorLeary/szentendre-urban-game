@@ -94,7 +94,7 @@ export class SupabaseLocationRepository implements LocationRepositoryPort {
     }
 
     const mappings: readonly Pick<RouteLocationRow, "location_id" | "sequence_index">[] =
-      routeLocationRows ?? [];
+      routeLocationRows;
     if (mappings.length === 0) {
       return [];
     }
@@ -126,7 +126,7 @@ export class SupabaseLocationRepository implements LocationRepositoryPort {
     }
 
     const locationMap = new Map<string, LocationRow>(
-      (locationRows ?? []).map((row): readonly [string, LocationRow] => [
+      locationRows.map((row): readonly [string, LocationRow] => [
         row.id,
         row as LocationRow
       ])

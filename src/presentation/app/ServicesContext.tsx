@@ -1,3 +1,5 @@
+/* eslint-disable react-refresh/only-export-components */
+
 import { createContext, type JSX, type ReactNode } from "react";
 
 import type { AppServices } from "@/application/contracts/app-services.contract";

@@ -22,7 +22,7 @@ export function QrScannerPanel({
   const { t } = useLanguage();
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
-  useEffect((): (() => void) | void => {
+  useEffect(() => {
     if (!isActive) {
       return;
     }
@@ -48,14 +48,14 @@ export function QrScannerPanel({
               return;
             }
 
-            if (result !== undefined && result !== null) {
+            if (result !== undefined) {
               onDetected(result.getText());
               controls?.stop();
               return;
             }
 
-            if (error !== undefined && error !== null) {
-              const message = error.message ?? "";
+            if (error !== undefined) {
+              const message = error.message;
               if (message.length > 0 && !message.includes("NotFoundException")) {
                 onError(message);
               }
@@ -75,7 +75,7 @@ export function QrScannerPanel({
     };
   }, [isActive, onDetected, onError, t]);
 
-  useEffect((): (() => void) | void => {
+  useEffect(() => {
     if (!isActive) {
       return;
     }

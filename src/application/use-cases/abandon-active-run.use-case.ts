@@ -5,7 +5,7 @@ import type { UseCase } from "@/application/use-cases/use-case.contract";
 import type { Run } from "@/core/entities/run.entity";
 import { ApplicationError } from "@/core/errors/app-error";
 
-export interface AbandonActiveRunRequest {}
+export type AbandonActiveRunRequest = Record<string, never>;
 
 export interface AbandonActiveRunResponse {
   readonly run: Run;
@@ -25,8 +25,9 @@ export class AbandonActiveRunUseCase
   ) {}
 
   public async execute(
-    _request: AbandonActiveRunRequest
+    request: AbandonActiveRunRequest
   ): Promise<AbandonActiveRunResponse> {
+    void request;
     const run: Run | null =
       await this.dependencies.runRepository.findActiveForCurrentDevice();
 

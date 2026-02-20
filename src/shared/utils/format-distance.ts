@@ -4,7 +4,7 @@ export function formatDistanceMeters(distanceMeters: number): string {
   }
 
   if (distanceMeters < 1000) {
-    return `${Math.round(distanceMeters)} m`;
+    return `${String(Math.round(distanceMeters))} m`;
   }
 
   return `${(distanceMeters / 1000).toFixed(2)} km`;

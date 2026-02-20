@@ -18,7 +18,7 @@ export function LocationMap({
   const { t } = useLanguage();
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
 
-  useEffect((): (() => void) | void => {
+  useEffect(() => {
     const mapContainer = mapContainerRef.current;
     if (mapContainer === null || locations.length === 0) {
       return;
@@ -50,7 +50,7 @@ export function LocationMap({
         fillOpacity: 0.9,
         weight: 2
       })
-        .bindTooltip(`${location.sequenceNumber}. ${location.name}`, {
+        .bindTooltip(`${String(location.sequenceNumber)}. ${location.name}`, {
           direction: "top"
         })
         .addTo(map);

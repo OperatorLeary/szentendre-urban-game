@@ -4,14 +4,23 @@ import {
 } from "@/core/constants/domain.constants";
 import { normalizeNonEmptyText } from "@/core/validation/domain-assertions";
 
-const CONTROL_CHARACTERS_PATTERN = /[\u0000-\u001f\u007f]/g;
+function replaceControlCharacters(value: string): string {
+  return Array.from(value, (character: string): string => {
+    const codePoint = character.codePointAt(0);
+    if (codePoint === undefined) {
+      return character;
+    }
+
+    return codePoint <= 31 || codePoint === 127 ? " " : character;
+  }).join("");
+}
 
 export class QrToken {
   private constructor(private readonly normalizedValue: string) {}
 
   public static create(rawValue: string): QrToken {
     const normalizedValue: string = normalizeNonEmptyText(
-      rawValue.replace(CONTROL_CHARACTERS_PATTERN, " "),
+      replaceControlCharacters(rawValue),
       "qrToken",
       MIN_QR_TOKEN_LENGTH,
       MAX_QR_TOKEN_LENGTH

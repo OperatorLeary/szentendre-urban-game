@@ -88,7 +88,7 @@ function QuestLocationPage(): JSX.Element {
 
   useEffect((): void => {
     if (!routeSelection.isValid) {
-      navigate(ROUTES.home);
+      void navigate(ROUTES.home);
     }
   }, [navigate, routeSelection.isValid]);
 
@@ -114,7 +114,7 @@ function QuestLocationPage(): JSX.Element {
       typeof activeRouteSlug === "string" &&
       typeof activeNextLocationSlug === "string"
     ) {
-      navigate(toRouteLocationPath(activeRouteSlug, activeNextLocationSlug), {
+      void navigate(toRouteLocationPath(activeRouteSlug, activeNextLocationSlug), {
         replace: true
       });
     }
@@ -135,9 +135,9 @@ function QuestLocationPage(): JSX.Element {
       if (result.accepted) {
         runSession.setSession(result.session);
       } else {
-        if ("distanceMeters" in result && result.distanceMeters !== undefined) {
+        if ("distanceMeters" in result) {
           updateState({
-            detectedDistanceMeters: result.distanceMeters
+            detectedDistanceMeters: result.distanceMeters ?? null
           });
         }
       }
@@ -159,7 +159,7 @@ function QuestLocationPage(): JSX.Element {
       nextLocationSlug !== routeSelection.locationSlug &&
       !runSession.data.session.isCompleted
     ) {
-      navigate(toRouteLocationPath(runSession.data.route.slug, nextLocationSlug), {
+      void navigate(toRouteLocationPath(runSession.data.route.slug, nextLocationSlug), {
         replace: true
       });
     }
@@ -194,7 +194,7 @@ function QuestLocationPage(): JSX.Element {
     }
 
       if (runSession.data !== null) {
-        navigate(toRouteLocationPath(runSession.data.route.slug, nextLocationSlug));
+        void navigate(toRouteLocationPath(runSession.data.route.slug, nextLocationSlug));
       }
     },
     [navigate, play, runSession.data, t]
@@ -285,7 +285,7 @@ function QuestLocationPage(): JSX.Element {
     setIsAbandonDialogOpen(false);
     setFeedbackMessage(t("quest.abandonSuccess"));
     play("success");
-    navigate(ROUTES.home, { replace: true });
+    void navigate(ROUTES.home, { replace: true });
   }, [navigate, play, runControl, t]);
 
   if (runSession.isLoading || runSession.data === null || activeLocation === null) {
@@ -317,7 +317,7 @@ function QuestLocationPage(): JSX.Element {
     language === "hu" && activeLocation.questionPromptHu !== null
       ? activeLocation.questionPromptHu
       : activeLocation.questionPrompt;
-  const progressRatio: string = `${runSession.data.session.completedLocations}/${runSession.data.session.totalLocations}`;
+  const progressRatio: string = `${String(runSession.data.session.completedLocations)}/${String(runSession.data.session.totalLocations)}`;
 
   return (
     <main className="quest-shell">

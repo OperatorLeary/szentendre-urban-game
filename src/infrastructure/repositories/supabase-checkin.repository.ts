@@ -87,7 +87,7 @@ export class SupabaseCheckinRepository implements CheckinRepositoryPort {
       );
     }
 
-    return (data ?? []).map((row): Checkin => toCheckinEntity(row as CheckinRow));
+    return data.map((row): Checkin => toCheckinEntity(row as CheckinRow));
   }
 
   public async findByRunAndLocation(

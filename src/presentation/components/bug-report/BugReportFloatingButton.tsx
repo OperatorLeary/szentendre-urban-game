@@ -1,4 +1,4 @@
-import { useState, type FormEvent, type JSX } from "react";
+import { useState, type JSX, type SyntheticEvent } from "react";
 
 import { useLanguage } from "@/presentation/app/LanguageContext";
 import { useSound } from "@/presentation/app/SoundContext";
@@ -13,18 +13,20 @@ export function BugReportFloatingButton(): JSX.Element {
   const { state } = useQuestRuntime();
   const bugReport = useBugReport();
 
-  const submitBugReport = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
+  const submitBugReport = (event: SyntheticEvent<HTMLFormElement>): void => {
     event.preventDefault();
-    const isSuccess: boolean = await bugReport.submitBugReport(description, state);
+    void (async (): Promise<void> => {
+      const isSuccess: boolean = await bugReport.submitBugReport(description, state);
 
-    if (isSuccess) {
-      play("success");
-      setDescription("");
-      setIsOpen(false);
-      return;
-    }
+      if (isSuccess) {
+        play("success");
+        setDescription("");
+        setIsOpen(false);
+        return;
+      }
 
-    play("error");
+      play("error");
+    })();
   };
 
   return (

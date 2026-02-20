@@ -1,4 +1,4 @@
-import type { FormEvent, JSX } from "react";
+import type { JSX, SyntheticEvent } from "react";
 
 import { useLanguage } from "@/presentation/app/LanguageContext";
 
@@ -17,7 +17,7 @@ export function AbandonRunDialog(props: AbandonRunDialogProps): JSX.Element | nu
     return null;
   }
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>): void => {
+  const handleSubmit = (event: SyntheticEvent<HTMLFormElement>): void => {
     event.preventDefault();
     props.onConfirm();
   };

@@ -116,7 +116,9 @@ export class GameSessionService {
   private getOrderedActiveLocations(locations: readonly Location[]): readonly Location[] {
     return [...locations]
       .filter((location: Location): boolean => location.isActive)
-      .sort(Location.compareBySequence);
+      .sort((left: Location, right: Location): number =>
+        Location.compareBySequence(left, right)
+      );
   }
 
   private getCompletedLocationIdSet(

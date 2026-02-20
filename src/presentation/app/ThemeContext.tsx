@@ -1,3 +1,5 @@
+/* eslint-disable react-refresh/only-export-components */
+
 import {
   createContext,
   useContext,
@@ -58,7 +60,7 @@ export function ThemeProvider({ children }: ThemeProviderProps): JSX.Element {
   const [mode, setMode] = useState<ThemeMode>(resolveInitialThemeMode);
   const [systemTheme, setSystemTheme] = useState<ResolvedTheme>(getSystemTheme);
 
-  useEffect((): (() => void) | void => {
+  useEffect(() => {
     if (typeof window === "undefined") {
       return;
     }

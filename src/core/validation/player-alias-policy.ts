@@ -17,7 +17,7 @@ export interface PlayerAliasValidationResult {
 }
 
 const URL_OR_CONTACT_PATTERN =
-  /(https?:\/\/|www\.|[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,})/i;
+  /(https?:\/\/|www\.|[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,})/i;
 
 const BLOCKED_TOKENS = new Set<string>([
   "nazi",

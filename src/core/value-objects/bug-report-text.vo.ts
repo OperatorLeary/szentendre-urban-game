@@ -9,12 +9,20 @@ import {
 import { normalizeNonEmptyText } from "@/core/validation/domain-assertions";
 
 const UNSAFE_HTML_CHARACTERS_PATTERN = /[<>]/g;
-const CONTROL_CHARACTERS_PATTERN = /[\u0000-\u001f\u007f]/g;
+
+function replaceControlCharacters(value: string): string {
+  return Array.from(value, (character: string): string => {
+    const codePoint = character.codePointAt(0);
+    if (codePoint === undefined) {
+      return character;
+    }
+
+    return codePoint <= 31 || codePoint === 127 ? " " : character;
+  }).join("");
+}
 
 export function sanitizeUserInput(rawValue: string): string {
-  return rawValue
-    .replace(CONTROL_CHARACTERS_PATTERN, " ")
-    .replace(UNSAFE_HTML_CHARACTERS_PATTERN, "");
+  return replaceControlCharacters(rawValue).replace(UNSAFE_HTML_CHARACTERS_PATTERN, "");
 }
 
 export class BugReportSummary {

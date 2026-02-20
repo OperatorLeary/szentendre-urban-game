@@ -1,4 +1,4 @@
-import { defineConfig, splitVendorChunkPlugin } from "vite";
+import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import { VitePWA } from "vite-plugin-pwa";
 
@@ -8,7 +8,6 @@ const thirtyDaysInSeconds = oneDayInSeconds * 30;
 export default defineConfig({
   plugins: [
     react(),
-    splitVendorChunkPlugin(),
     VitePWA({
       registerType: "autoUpdate",
       manifest: {

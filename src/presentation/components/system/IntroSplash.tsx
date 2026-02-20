@@ -12,7 +12,7 @@ const SPLASH_DURATION_MS = 850;
 export function IntroSplash({ isVisible, onComplete }: IntroSplashProps): JSX.Element | null {
   const { t } = useLanguage();
 
-  useEffect((): (() => void) | void => {
+  useEffect(() => {
     if (!isVisible) {
       return;
     }

@@ -26,12 +26,12 @@ export function assertNumberInRange(
   max: number
 ): void {
   assertFiniteNumber(value, fieldName);
-  assertCondition(value >= min, `${fieldName} must be >= ${min}.`, {
+  assertCondition(value >= min, `${fieldName} must be >= ${String(min)}.`, {
     fieldName,
     min,
     value
   });
-  assertCondition(value <= max, `${fieldName} must be <= ${max}.`, {
+  assertCondition(value <= max, `${fieldName} must be <= ${String(max)}.`, {
     fieldName,
     max,
     value

@@ -87,6 +87,6 @@ export class SupabaseRouteRepository implements RouteRepositoryPort {
       );
     }
 
-    return (data ?? []).map((routeRow): Route => toRouteEntity(routeRow as RouteRow));
+    return data.map((routeRow): Route => toRouteEntity(routeRow as RouteRow));
   }
 }

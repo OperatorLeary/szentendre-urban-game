@@ -17,6 +17,18 @@ export function InstallPromptButton(): JSX.Element | null {
     null
   );
 
+  const handleInstallClick = (): void => {
+    if (installEvent === null) {
+      return;
+    }
+
+    void (async (): Promise<void> => {
+      await installEvent.prompt();
+      await installEvent.userChoice;
+      setInstallEvent(null);
+    })();
+  };
+
   useEffect((): (() => void) => {
     const handler = (event: Event): void => {
       event.preventDefault();
@@ -38,11 +50,7 @@ export function InstallPromptButton(): JSX.Element | null {
     <button
       type="button"
       className="install-button"
-      onClick={async (): Promise<void> => {
-        await installEvent.prompt();
-        await installEvent.userChoice;
-        setInstallEvent(null);
-      }}
+      onClick={handleInstallClick}
     >
       {t("install.button")}
     </button>

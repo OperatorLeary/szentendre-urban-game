@@ -11,7 +11,7 @@ export interface RouteOverview {
   readonly firstLocationSlug: string | null;
 }
 
-export interface ListRoutesRequest {}
+export type ListRoutesRequest = Record<string, never>;
 
 export type ListRoutesResponse = readonly RouteOverview[];
 
@@ -25,7 +25,8 @@ export class ListRoutesUseCase
 {
   public constructor(private readonly dependencies: ListRoutesDependencies) {}
 
-  public async execute(_request: ListRoutesRequest): Promise<ListRoutesResponse> {
+  public async execute(request: ListRoutesRequest): Promise<ListRoutesResponse> {
+    void request;
     const routes: readonly Route[] = await this.dependencies.routeRepository.listActive();
 
     const routeOverviews: readonly RouteOverview[] = await Promise.all(
