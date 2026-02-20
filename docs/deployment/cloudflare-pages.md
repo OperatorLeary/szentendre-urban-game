@@ -15,15 +15,13 @@
 Use the same variables in both `Production` and `Preview` environments.
 
 ## SPA Routing
-This project includes `public/_redirects`:
-
-```txt
-/* / 200
-```
-
-That enables direct navigation to dynamic quest URLs such as:
+Cloudflare Pages already supports SPA fallback by default when there is no top-level
+`404.html`. This project relies on that default behavior for dynamic quest URLs such as:
 
 `/r/:routeSlug/l/:locationSlug`
+
+Do **not** add a catch-all `_redirects` rule like `/* / 200` because it rewrites JS/CSS
+asset requests to HTML and breaks app boot.
 
 ## Cache Strategy
 This project includes `public/_headers`:
