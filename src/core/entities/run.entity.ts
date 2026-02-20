@@ -11,6 +11,7 @@ import {
   assertValidDate,
   normalizeNonEmptyText
 } from "@/core/validation/domain-assertions";
+import { validatePlayerAlias } from "@/core/validation/player-alias-policy";
 
 export interface RunProps {
   readonly id: RunId;
@@ -41,6 +42,14 @@ export class Run extends Entity<RunId> {
       MIN_PLAYER_ALIAS_LENGTH,
       MAX_PLAYER_ALIAS_LENGTH
     );
+    const aliasValidation = validatePlayerAlias(normalizedAlias);
+    if (!aliasValidation.isValid) {
+      throw new DomainError("playerAlias contains blocked or unsafe content.", {
+        context: {
+          reason: aliasValidation.reason
+        }
+      });
+    }
 
     assertPositiveInteger(props.currentSequenceIndex, "currentSequenceIndex");
     assertValidDate(props.startedAt, "runStartedAt");

@@ -8,6 +8,10 @@ import {
 import { useNavigate } from "react-router-dom";
 
 import type { RouteOverview } from "@/application/use-cases/list-routes.use-case";
+import {
+  type PlayerAliasValidationReason,
+  validatePlayerAlias
+} from "@/core/validation/player-alias-policy";
 import { useLanguage } from "@/presentation/app/LanguageContext";
 import { useSound } from "@/presentation/app/SoundContext";
 import { QrScannerPanel } from "@/presentation/components/quest/QrScannerPanel";
@@ -39,6 +43,23 @@ function setStoredAlias(alias: string): void {
   }
 
   window.localStorage.setItem(PLAYER_ALIAS_STORAGE_KEY, alias.trim());
+}
+
+function getAliasValidationMessage(
+  reason: PlayerAliasValidationReason | null,
+  t: ReturnType<typeof useLanguage>["t"]
+): string {
+  switch (reason) {
+    case "too_short":
+    case "too_long":
+      return t("home.playerAliasInvalidLength");
+    case "contains_url_or_contact":
+      return t("home.playerAliasContainsLinkOrContact");
+    case "contains_blocked_content":
+      return t("home.playerAliasBlockedContent");
+    default:
+      return t("home.playerAliasBlockedContent");
+  }
 }
 
 function HomePage(): JSX.Element {
@@ -115,6 +136,13 @@ function HomePage(): JSX.Element {
 
     const normalizedAlias: string =
       playerAlias.trim().length === 0 ? DEFAULT_PLAYER_ALIAS : playerAlias.trim();
+    const aliasValidation = validatePlayerAlias(normalizedAlias);
+    if (!aliasValidation.isValid) {
+      setErrorMessage(getAliasValidationMessage(aliasValidation.reason, t));
+      play("error");
+      return;
+    }
+
     setStoredAlias(normalizedAlias);
 
     logger.info("Starting route from home page.", {
@@ -128,6 +156,15 @@ function HomePage(): JSX.Element {
 
   const continueWithQrPayload = useCallback(
     (payload: string): void => {
+      const normalizedAlias: string =
+        playerAlias.trim().length === 0 ? DEFAULT_PLAYER_ALIAS : playerAlias.trim();
+      const aliasValidation = validatePlayerAlias(normalizedAlias);
+      if (!aliasValidation.isValid) {
+        setErrorMessage(getAliasValidationMessage(aliasValidation.reason, t));
+        play("error");
+        return;
+      }
+
       const parsedPayload = parseRouteLocationPayload(payload);
       if (parsedPayload === null) {
         setErrorMessage(t("home.qrPayloadInvalid"));
@@ -136,7 +173,7 @@ function HomePage(): JSX.Element {
       }
 
       play("tap");
-      setStoredAlias(playerAlias);
+      setStoredAlias(aliasValidation.normalizedAlias);
       navigate(toRouteLocationPath(parsedPayload.routeSlug, parsedPayload.locationSlug));
     },
     [navigate, play, playerAlias, t]

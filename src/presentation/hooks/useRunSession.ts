@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import type { EnsureRunSessionResponse } from "@/application/use-cases/ensure-run-session.use-case";
+import { validatePlayerAlias } from "@/core/validation/player-alias-policy";
 import { AppError } from "@/core/errors/app-error";
 import type { GameSessionSnapshot } from "@/core/models/game-session.model";
 import { useLanguage } from "@/presentation/app/LanguageContext";
@@ -50,7 +51,13 @@ function getStoredPlayerAlias(): string {
     return DEFAULT_PLAYER_ALIAS;
   }
 
-  return value.trim();
+  const normalizedAlias: string = value.trim();
+  const aliasValidation = validatePlayerAlias(normalizedAlias);
+  if (!aliasValidation.isValid) {
+    return DEFAULT_PLAYER_ALIAS;
+  }
+
+  return aliasValidation.normalizedAlias;
 }
 
 export function useRunSession(input: UseRunSessionInput): UseRunSessionResult {

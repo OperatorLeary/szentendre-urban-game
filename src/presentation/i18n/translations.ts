@@ -26,6 +26,11 @@ const hu = {
   "home.startRoute": "Útvonal indítása",
   "home.routeMissingFirstLocation":
     "A(z) \"{routeName}\" útvonalhoz nincs aktív kezdő állomás beállítva.",
+  "home.playerAliasInvalidLength": "A játékosnév 2-40 karakter közötti legyen.",
+  "home.playerAliasContainsLinkOrContact":
+    "A játékosnév nem tartalmazhat linket vagy e-mail címet.",
+  "home.playerAliasBlockedContent":
+    "Válassz másik játékosnevet. Kérjük, kerüld a sértő, politikai vagy jogsértő tartalmat.",
   "home.qrStartTitle": "Indítás QR-kódról",
   "home.scanQrWithCamera": "QR-szkennelés kamerával",
   "home.hideCameraScanner": "Kamera szkennelő elrejtése",
@@ -124,6 +129,11 @@ const en: Record<TranslationKey, string> = {
   "home.startRoute": "Start route",
   "home.routeMissingFirstLocation":
     "Route \"{routeName}\" has no active starting station configured.",
+  "home.playerAliasInvalidLength": "Player alias must be between 2 and 40 characters.",
+  "home.playerAliasContainsLinkOrContact":
+    "Player alias cannot contain a link or email address.",
+  "home.playerAliasBlockedContent":
+    "Choose a different alias. Please avoid offensive, political, or illegal content.",
   "home.qrStartTitle": "Start from QR",
   "home.scanQrWithCamera": "Scan QR with camera",
   "home.hideCameraScanner": "Hide camera scanner",
