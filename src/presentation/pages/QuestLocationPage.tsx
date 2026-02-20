@@ -4,6 +4,7 @@ import {
   useMemo,
   useState,
   type ChangeEvent,
+  type KeyboardEvent,
   type JSX
 } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
@@ -379,6 +380,10 @@ function QuestLocationPage(): JSX.Element {
     activeLocation.instructionFull
   );
   const progressRatio: string = `${String(runSession.data.session.completedLocations)}/${String(runSession.data.session.totalLocations)}`;
+  const progressPercentage: number = runSession.data.session.completionPercentage;
+  const hasAnswer: boolean = answerText.trim().length > 0;
+  const hasQrPayload: boolean = qrPayload.trim().length > 0;
+  const nextLocationName: string | null = runSession.data.session.nextLocation?.name ?? null;
 
   return (
     <main className="quest-shell">
@@ -398,9 +403,21 @@ function QuestLocationPage(): JSX.Element {
           </button>
         </div>
         <p className="quest-muted">
-          {t("quest.progress")}: {progressRatio} ({runSession.data.session.completionPercentage}
-          %)
+          {t("quest.progress")}: {progressRatio} ({progressPercentage}%)
         </p>
+        <div
+          className="quest-progress-track"
+          role="progressbar"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={progressPercentage}
+          aria-label={t("quest.progress")}
+        >
+          <div
+            className="quest-progress-fill"
+            style={{ width: `${String(progressPercentage)}%` }}
+          />
+        </div>
         <p className="quest-muted">
           {t("quest.station")} {activeLocation.sequenceNumber}: {activeLocation.name}
         </p>
@@ -471,15 +488,25 @@ function QuestLocationPage(): JSX.Element {
             onChange={(event: ChangeEvent<HTMLInputElement>): void => {
               setAnswerText(event.target.value);
             }}
+            onKeyDown={(event: KeyboardEvent<HTMLInputElement>): void => {
+              if (event.key !== "Enter" || !hasAnswer || locationValidation.isSubmitting) {
+                return;
+              }
+
+              event.preventDefault();
+              play("tap");
+              void validateWithGps();
+            }}
             maxLength={300}
           />
         </label>
+        <p className="quest-muted quest-answer-hint">{t("quest.answerQuickHint")}</p>
 
         <div className="quest-actions">
           <button
             className="quest-button"
             type="button"
-            disabled={locationValidation.isSubmitting || geolocation.isLoading}
+            disabled={!hasAnswer || locationValidation.isSubmitting || geolocation.isLoading}
             onClick={(): void => {
               play("tap");
               void validateWithGps();
@@ -490,7 +517,7 @@ function QuestLocationPage(): JSX.Element {
           <button
             className="quest-button quest-button--ghost"
             type="button"
-            disabled={locationValidation.isSubmitting}
+            disabled={!hasAnswer || locationValidation.isSubmitting}
             onClick={(): void => {
               play("tap");
               setIsScannerVisible((isVisible: boolean): boolean => !isVisible);
@@ -531,7 +558,7 @@ function QuestLocationPage(): JSX.Element {
         <button
           className="quest-button quest-button--ghost"
           type="button"
-          disabled={locationValidation.isSubmitting}
+          disabled={!hasAnswer || !hasQrPayload || locationValidation.isSubmitting}
           onClick={(): void => {
             play("tap");
             void validateWithQr(qrPayload);
@@ -557,8 +584,13 @@ function QuestLocationPage(): JSX.Element {
         <p className="quest-copy">
           {nextLocationSlug === null
             ? t("quest.finalCheckpoint")
-            : t("quest.expectedNextStop", { slug: nextLocationSlug })}
+            : t("quest.expectedNextStopName", {
+                stationName: nextLocationName ?? nextLocationSlug
+              })}
         </p>
+        {nextLocationSlug !== null ? (
+          <p className="quest-muted">{t("quest.expectedNextStop", { slug: nextLocationSlug })}</p>
+        ) : null}
         <Link className="app-link" to={ROUTES.home}>
           {t("quest.exitHome")}
         </Link>
