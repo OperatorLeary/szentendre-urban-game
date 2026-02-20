@@ -30,6 +30,7 @@ export function toLocationEntity(
       sequenceNumber: sequenceIndex,
       qrToken: QrToken.create(row.qr_code_value),
       questionPrompt: row.question_prompt,
+      questionPromptHu: row.question_prompt_hu,
       expectedAnswers,
       isActive: row.is_active,
       createdAt: parseIsoDate(row.created_at, "LocationMapper", "locations.created_at"),

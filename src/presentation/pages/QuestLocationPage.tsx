@@ -66,7 +66,7 @@ function mapValidationReason(
 }
 
 function QuestLocationPage(): JSX.Element {
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
   const navigate = useNavigate();
   const routeSelection = useRoute();
   const { updateState, resetState } = useQuestRuntime();
@@ -300,6 +300,10 @@ function QuestLocationPage(): JSX.Element {
     runSession.data.route.name,
     t
   );
+  const localizedQuestionPrompt: string =
+    language === "hu" && activeLocation.questionPromptHu !== null
+      ? activeLocation.questionPromptHu
+      : activeLocation.questionPrompt;
   const progressRatio: string = `${runSession.data.session.completedLocations}/${runSession.data.session.totalLocations}`;
 
   return (
@@ -337,7 +341,7 @@ function QuestLocationPage(): JSX.Element {
 
       <section className="quest-panel">
         <h2 className="quest-panel-title">{t("quest.questionTitle")}</h2>
-        <p className="quest-copy">{activeLocation.questionPrompt}</p>
+        <p className="quest-copy">{localizedQuestionPrompt}</p>
         <label className="quest-field">
           <span className="quest-field-label">{t("quest.yourAnswerLabel")}</span>
           <input

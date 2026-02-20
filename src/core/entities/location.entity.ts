@@ -34,6 +34,7 @@ export interface LocationProps {
   readonly sequenceNumber: number;
   readonly qrToken: QrToken;
   readonly questionPrompt: string;
+  readonly questionPromptHu: string | null;
   readonly expectedAnswers: readonly string[];
   readonly isActive: boolean;
   readonly createdAt: Date;
@@ -48,6 +49,7 @@ export class Location extends Entity<LocationId> {
   public readonly sequenceNumber: number;
   public readonly qrToken: QrToken;
   public readonly questionPrompt: string;
+  public readonly questionPromptHu: string | null;
   public readonly expectedAnswers: readonly string[];
   private readonly normalizedExpectedAnswers: readonly string[];
   public readonly isActive: boolean;
@@ -75,6 +77,15 @@ export class Location extends Entity<LocationId> {
       MIN_LOCATION_QUESTION_LENGTH,
       MAX_LOCATION_QUESTION_LENGTH
     );
+    const normalizedQuestionPromptHu: string | null =
+      props.questionPromptHu === null
+        ? null
+        : normalizeNonEmptyText(
+            props.questionPromptHu,
+            "questionPromptHu",
+            MIN_LOCATION_QUESTION_LENGTH,
+            MAX_LOCATION_QUESTION_LENGTH
+          );
     const normalizedExpectedAnswers: readonly string[] = Array.from(
       new Set(
         props.expectedAnswers.map((answer: string): string =>
@@ -117,6 +128,7 @@ export class Location extends Entity<LocationId> {
     this.sequenceNumber = props.sequenceNumber;
     this.qrToken = props.qrToken;
     this.questionPrompt = normalizedQuestionPrompt;
+    this.questionPromptHu = normalizedQuestionPromptHu;
     this.expectedAnswers = normalizedExpectedAnswers;
     this.normalizedExpectedAnswers = normalizedExpectedAnswers;
     this.isActive = props.isActive;

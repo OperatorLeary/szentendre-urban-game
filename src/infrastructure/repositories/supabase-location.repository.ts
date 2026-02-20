@@ -38,7 +38,7 @@ export class SupabaseLocationRepository implements LocationRepositoryPort {
     const { data: locationRow, error: locationError } = await this.supabase
       .from(SUPABASE_TABLES.locations)
       .select(
-        "id, slug, name, description, latitude, longitude, radius_m, qr_code_value, question_prompt, expected_answer, expected_answers, is_active, created_at, updated_at"
+        "id, slug, name, description, latitude, longitude, radius_m, qr_code_value, question_prompt, question_prompt_hu, expected_answer, expected_answers, is_active, created_at, updated_at"
       )
       .eq("slug", locationSlug)
       .eq("is_active", true)
@@ -106,7 +106,7 @@ export class SupabaseLocationRepository implements LocationRepositoryPort {
     const { data: locationRows, error: locationError } = await this.supabase
       .from(SUPABASE_TABLES.locations)
       .select(
-        "id, slug, name, description, latitude, longitude, radius_m, qr_code_value, question_prompt, expected_answer, expected_answers, is_active, created_at, updated_at"
+        "id, slug, name, description, latitude, longitude, radius_m, qr_code_value, question_prompt, question_prompt_hu, expected_answer, expected_answers, is_active, created_at, updated_at"
       )
       .in("id", [...locationIds])
       .eq("is_active", true);
@@ -183,7 +183,7 @@ export class SupabaseLocationRepository implements LocationRepositoryPort {
     const { data, error } = await this.supabase
       .from(SUPABASE_TABLES.locations)
       .select(
-        "id, slug, name, description, latitude, longitude, radius_m, qr_code_value, question_prompt, expected_answer, expected_answers, is_active, created_at, updated_at"
+        "id, slug, name, description, latitude, longitude, radius_m, qr_code_value, question_prompt, question_prompt_hu, expected_answer, expected_answers, is_active, created_at, updated_at"
       )
       .eq("id", locationId)
       .eq("is_active", true)
