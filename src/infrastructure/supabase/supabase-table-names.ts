@@ -1,4 +1,5 @@
 export const SUPABASE_TABLES = {
+  adminUsers: "admin_users",
   routes: "routes",
   locations: "locations",
   routeLocations: "route_locations",

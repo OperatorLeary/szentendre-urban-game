@@ -26,6 +26,7 @@ import RouteFallback from "@/presentation/components/system/RouteFallback";
 import { ROUTES } from "@/shared/config/routes";
 
 const HomePage = lazy(async () => import("@/presentation/pages/HomePage"));
+const AdminPage = lazy(async () => import("@/presentation/pages/AdminPage"));
 const QuestLocationPage = lazy(
   async () => import("@/presentation/pages/QuestLocationPage")
 );
@@ -83,6 +84,7 @@ function AppRouter(): JSX.Element {
         <div className={routeStageClassName} key={location.pathname}>
           <Routes location={location}>
             <Route path={ROUTES.home} element={<HomePage />} />
+            <Route path={ROUTES.admin} element={<AdminPage />} />
             <Route path={ROUTES.routeLocation} element={<QuestLocationPage />} />
             <Route path={ROUTES.notFound} element={<NotFoundPage />} />
           </Routes>
