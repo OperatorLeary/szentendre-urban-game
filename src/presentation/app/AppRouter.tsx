@@ -17,6 +17,7 @@ import {
 
 import { useSound } from "@/presentation/app/SoundContext";
 import { BugReportFloatingButton } from "@/presentation/components/bug-report/BugReportFloatingButton";
+import { DesktopDeviceNotice } from "@/presentation/components/system/DesktopDeviceNotice";
 import { IntroSplash } from "@/presentation/components/system/IntroSplash";
 import { InstallPromptButton } from "@/presentation/components/system/InstallPromptButton";
 import { LanguageSwitcher } from "@/presentation/components/system/LanguageSwitcher";
@@ -73,6 +74,7 @@ function AppRouter(): JSX.Element {
   return (
     <>
       <IntroSplash isVisible={isIntroVisible} onComplete={handleIntroComplete} />
+      <DesktopDeviceNotice isSuppressed={isIntroVisible} />
       <div className="top-controls">
         <LanguageSwitcher />
         <ThemeSwitcher />

@@ -43,6 +43,11 @@ const hu = {
   "home.hideCameraScanner": "Kamera szkennelő elrejtése",
   "home.qrPayloadInvalid":
     "A QR-tartalomnak tartalmaznia kell az /r/{routeSlug}/l/{locationSlug} formátumot.",
+  "desktopNotice.title": "A játék mobilon az igazi",
+  "desktopNotice.copy":
+    "A legjobb élményért nyisd meg telefonon vagy tableten (iPhone, iPad, Android). Ezen az eszközön is folytathatod, de mobilon pontosabb a GPS és kényelmesebb a QR-szkennelés.",
+  "desktopNotice.continueHere": "Folytatás ezen az eszközön",
+  "desktopNotice.close": "Bezárás",
   "admin.title": "Admin - állomás tartalom szerkesztő",
   "admin.subtitle":
     "Magic link belépéssel szerkesztheted az útvonal-állomás tartalmakat (route_stations).",
@@ -216,6 +221,11 @@ const en: Record<TranslationKey, string> = {
   "home.hideCameraScanner": "Hide camera scanner",
   "home.qrPayloadInvalid":
     "QR payload must contain /r/{routeSlug}/l/{locationSlug}.",
+  "desktopNotice.title": "Best experienced on mobile",
+  "desktopNotice.copy":
+    "For the best experience, open this game on a phone or tablet (iPhone, iPad, Android). You can continue on this device, but GPS and QR scanning are usually better on mobile.",
+  "desktopNotice.continueHere": "Continue on this device",
+  "desktopNotice.close": "Close",
   "admin.title": "Admin - station content editor",
   "admin.subtitle":
     "Use magic-link access to edit route-specific station content (route_stations).",
