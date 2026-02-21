@@ -241,6 +241,25 @@ function mapValidationReason(
   }
 }
 
+const SUCCESS_CHEER_KEYS: readonly TranslationKey[] = [
+  "quest.cheer.1",
+  "quest.cheer.2",
+  "quest.cheer.3",
+  "quest.cheer.4",
+  "quest.cheer.5"
+];
+
+function buildSuccessFeedback(
+  baseKey: TranslationKey,
+  session: GameSessionSnapshot,
+  translate: (key: TranslationKey) => string
+): string {
+  const cheerKey: TranslationKey =
+    SUCCESS_CHEER_KEYS[Math.max(session.completedLocations - 1, 0) % SUCCESS_CHEER_KEYS.length] ??
+    "quest.cheer.1";
+  return `${translate(baseKey)} ${translate(cheerKey)}`;
+}
+
 function QuestLocationPage(): JSX.Element {
   const { language, t } = useLanguage();
   const { play } = useSound();
@@ -392,12 +411,14 @@ function QuestLocationPage(): JSX.Element {
           : getNextLocationSlug(session, runSession.data.locations);
 
       if (nextLocationSlug === null) {
-      setFeedbackMessage(t("quest.routeCompleted"));
-      setCompletionTimestamp(new Date());
-      setIsScannerVisible(false);
+        setFeedbackMessage(t("quest.routeCompleted"));
+        setCompletionTimestamp(new Date());
+        setIsScannerVisible(false);
+        play("finale");
+        return;
+      }
+
       play("success");
-      return;
-    }
 
       if (runSession.data !== null) {
         void navigate(toRouteLocationPath(runSession.data.route.slug, nextLocationSlug));
@@ -424,8 +445,7 @@ function QuestLocationPage(): JSX.Element {
       }
 
       if (response.accepted) {
-        setFeedbackMessage(t("quest.bypassAccepted"));
-        play("success");
+        setFeedbackMessage(buildSuccessFeedback("quest.bypassAccepted", response.session, t));
         handleValidationSuccess(response.session);
         return;
       }
@@ -455,8 +475,7 @@ function QuestLocationPage(): JSX.Element {
     }
 
     if (response.accepted) {
-      setFeedbackMessage(t("quest.gpsAccepted"));
-      play("success");
+      setFeedbackMessage(buildSuccessFeedback("quest.gpsAccepted", response.session, t));
       handleValidationSuccess(response.session);
       return;
     }
@@ -493,8 +512,7 @@ function QuestLocationPage(): JSX.Element {
       }
 
       if (response.accepted) {
-        setFeedbackMessage(t("quest.qrAccepted"));
-        play("success");
+        setFeedbackMessage(buildSuccessFeedback("quest.qrAccepted", response.session, t));
         handleValidationSuccess(response.session);
         return;
       }

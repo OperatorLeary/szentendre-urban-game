@@ -1,6 +1,7 @@
 export type QuestSound =
   | "tap"
   | "success"
+  | "finale"
   | "error"
   | "transition"
   | "language_hu"
@@ -21,6 +22,12 @@ const SOUND_LIBRARY: Readonly<Record<QuestSound, readonly ToneSpec[]>> = Object.
   success: [
     { frequency: 620, durationMs: 65, volume: 0.04, type: "sine" },
     { frequency: 880, durationMs: 78, volume: 0.04, type: "sine", delayMs: 72 }
+  ],
+  finale: [
+    { frequency: 523, durationMs: 120, volume: 0.036, type: "sine" },
+    { frequency: 659, durationMs: 120, volume: 0.034, type: "sine", delayMs: 110 },
+    { frequency: 784, durationMs: 145, volume: 0.034, type: "sine", delayMs: 220 },
+    { frequency: 1047, durationMs: 260, volume: 0.03, type: "triangle", delayMs: 335 }
   ],
   error: [
     { frequency: 350, durationMs: 80, volume: 0.045, type: "sawtooth" },
