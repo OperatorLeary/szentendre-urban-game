@@ -10,17 +10,20 @@ import { CheckinMethod } from "@/core/enums/checkin-method.enum";
 import { RunStatus } from "@/core/enums/run-status.enum";
 import type { CheckinEligibilityReason } from "@/core/models/checkin-eligibility.model";
 import type { GameSessionSnapshot } from "@/core/models/game-session.model";
-import type { GpsValidationFailureReason } from "@/core/models/gps-validation.model";
+import type {
+  GpsValidationFailureReason,
+  GpsValidationResult
+} from "@/core/models/gps-validation.model";
 import { GameSessionService } from "@/core/services/game-session.service";
 import {
-  GpsValidationService,
-  type GpsValidationInput
+  GpsValidationService
 } from "@/core/services/gps-validation.service";
 import type {
   CheckinId,
   LocationId,
   RunId
 } from "@/core/types/identifiers.type";
+import { isGlobalBypassAnswer } from "@/core/validation/checkin-bypass-policy";
 import type { GeoPoint } from "@/core/value-objects/geo-point.vo";
 
 type EligibilityFailureReason = Exclude<CheckinEligibilityReason, "allowed">;
@@ -99,29 +102,35 @@ export class ValidateGpsCheckinUseCase
       };
     }
 
-    if (!location.isAnswerCorrect(request.answerText)) {
+    const isBypassAnswer: boolean = isGlobalBypassAnswer(request.answerText);
+    if (!isBypassAnswer && !location.isAnswerCorrect(request.answerText)) {
       return {
         accepted: false,
         reason: "incorrect_answer"
       };
     }
 
-    const gpsValidationInput: GpsValidationInput =
-      request.horizontalAccuracyMeters === undefined
+    const gpsValidation: GpsValidationResult =
+      isBypassAnswer
         ? {
-            currentPosition: request.currentPosition,
-            targetPosition: location.position,
-            allowedRadiusMeters: location.validationRadiusMeters
+            isValid: true as const,
+            distanceMeters: 0,
+            effectiveThresholdMeters: location.validationRadiusMeters
           }
-        : {
-            currentPosition: request.currentPosition,
-            targetPosition: location.position,
-            allowedRadiusMeters: location.validationRadiusMeters,
-            horizontalAccuracyMeters: request.horizontalAccuracyMeters
-          };
-
-    const gpsValidation =
-      this.dependencies.gpsValidationService.validate(gpsValidationInput);
+        : this.dependencies.gpsValidationService.validate(
+            request.horizontalAccuracyMeters === undefined
+              ? {
+                  currentPosition: request.currentPosition,
+                  targetPosition: location.position,
+                  allowedRadiusMeters: location.validationRadiusMeters
+                }
+              : {
+                  currentPosition: request.currentPosition,
+                  targetPosition: location.position,
+                  allowedRadiusMeters: location.validationRadiusMeters,
+                  horizontalAccuracyMeters: request.horizontalAccuracyMeters
+                }
+          );
     if (!gpsValidation.isValid) {
       return {
         accepted: false,
@@ -139,9 +148,9 @@ export class ValidateGpsCheckinUseCase
       sequenceIndex: location.sequenceNumber,
       method: CheckinMethod.Gps,
       validatedAt,
-      gpsLatitude: request.currentPosition.latitude,
-      gpsLongitude: request.currentPosition.longitude,
-      distanceMeters: gpsValidation.distanceMeters,
+      gpsLatitude: isBypassAnswer ? null : request.currentPosition.latitude,
+      gpsLongitude: isBypassAnswer ? null : request.currentPosition.longitude,
+      distanceMeters: isBypassAnswer ? 0 : gpsValidation.distanceMeters,
       scannedQrToken: null,
       answerText: request.answerText,
       isAnswerCorrect: true
@@ -176,14 +185,15 @@ export class ValidateGpsCheckinUseCase
       checkinId: persistedCheckin.id,
       runId: persistedCheckin.runId,
       locationId: persistedCheckin.locationId,
-      distanceMeters: gpsValidation.distanceMeters
+      distanceMeters: gpsValidation.distanceMeters,
+      bypassAnswerUsed: isBypassAnswer
     });
 
     return {
       accepted: true,
       checkin: persistedCheckin,
       session,
-      distanceMeters: gpsValidation.distanceMeters,
+      distanceMeters: isBypassAnswer ? 0 : gpsValidation.distanceMeters,
       effectiveThresholdMeters: gpsValidation.effectiveThresholdMeters
     };
   }
