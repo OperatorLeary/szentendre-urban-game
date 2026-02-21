@@ -10,6 +10,8 @@ interface LocationMapProps {
   readonly userPosition: { readonly latitude: number; readonly longitude: number } | null;
 }
 
+const CITY_MIN_ZOOM = 13;
+
 export function LocationMap({
   locations,
   activeLocationId,
@@ -26,7 +28,9 @@ export function LocationMap({
 
     const map = L.map(mapContainer, {
       zoomControl: false,
-      attributionControl: false
+      attributionControl: false,
+      minZoom: CITY_MIN_ZOOM,
+      maxBoundsViscosity: 1
     });
 
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -83,6 +87,9 @@ export function LocationMap({
     }
 
     const bounds = L.latLngBounds(locationCoordinates);
+    const interactionBounds = bounds.pad(0.6);
+    map.setMaxBounds(interactionBounds);
+
     map.fitBounds(bounds, {
       padding: [24, 24],
       maxZoom: 16
