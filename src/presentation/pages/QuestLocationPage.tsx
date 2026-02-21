@@ -296,6 +296,35 @@ function buildSuccessFeedback(
   return `${translate(baseKey)} ${translate(cheerKey)}`;
 }
 
+interface ParsedQuestionOption {
+  readonly key: string;
+  readonly label: string;
+}
+
+function parseQuestionOptions(questionPrompt: string): readonly ParsedQuestionOption[] {
+  return questionPrompt
+    .split(/\r?\n/)
+    .flatMap((line): readonly ParsedQuestionOption[] => {
+      const optionMatch = line.match(/^\s*([a-z])\)\s*(.+)\s*$/i);
+      if (optionMatch === null) {
+        return [];
+      }
+
+      const optionKey = optionMatch[1]?.trim().toLowerCase() ?? "";
+      const optionLabel = optionMatch[2]?.trim() ?? "";
+      if (optionKey.length === 0 || optionLabel.length === 0) {
+        return [];
+      }
+
+      return [
+        {
+          key: optionKey,
+          label: optionLabel
+        }
+      ];
+    });
+}
+
 function resolveInitialOnlineState(): boolean {
   if (typeof navigator === "undefined") {
     return true;
@@ -848,6 +877,8 @@ function QuestLocationPage(): JSX.Element {
     language === "hu" && activeLocation.questionPromptHu !== null
       ? activeLocation.questionPromptHu
       : activeLocation.questionPrompt;
+  const questionOptions: readonly ParsedQuestionOption[] =
+    parseQuestionOptions(localizedQuestionPrompt);
   const fallbackNavigationTextHint: string = t("quest.navigationTextHint", {
     stationName: activeLocation.name,
     stationSequence: String(activeLocation.sequenceNumber)
@@ -1132,7 +1163,31 @@ function QuestLocationPage(): JSX.Element {
         ) : (
           <>
             <h2 className="quest-panel-title">{t("quest.questionTitle")}</h2>
-            <p className="quest-copy">{localizedQuestionPrompt}</p>
+            <p className="quest-copy quest-question-prompt">{localizedQuestionPrompt}</p>
+            {questionOptions.length > 0 ? (
+              <div className="quest-choice-grid" data-testid="quest-choice-grid">
+                {questionOptions.map((option) => {
+                  const normalizedAnswer = answerText.trim().toLowerCase();
+                  const optionLabelNormalized = option.label.toLowerCase();
+                  const isSelected =
+                    normalizedAnswer === option.key || normalizedAnswer === optionLabelNormalized;
+
+                  return (
+                    <button
+                      key={`${option.key}-${option.label}`}
+                      type="button"
+                      className={`quest-choice-button${isSelected ? " is-selected" : ""}`}
+                      onClick={(): void => {
+                        play("tap");
+                        setAnswerText(option.key);
+                      }}
+                    >
+                      <span className="quest-choice-key">{option.key})</span> {option.label}
+                    </button>
+                  );
+                })}
+              </div>
+            ) : null}
             <label className="quest-field">
               <span className="quest-field-label">{t("quest.yourAnswerLabel")}</span>
               <input

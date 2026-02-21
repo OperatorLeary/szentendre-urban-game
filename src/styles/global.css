@@ -336,6 +336,51 @@ body::after {
   color: var(--color-muted);
 }
 
+.quest-question-prompt {
+  white-space: pre-line;
+}
+
+.quest-choice-grid {
+  margin-top: 0.72rem;
+  display: grid;
+  gap: 0.52rem;
+}
+
+.quest-choice-button {
+  border: 1px solid var(--color-input-border);
+  border-radius: 0.76rem;
+  background: var(--color-input-bg);
+  color: inherit;
+  padding: 0.54rem 0.68rem;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  transition:
+    border-color var(--dur-fast) var(--ease-smooth),
+    box-shadow var(--dur-fast) var(--ease-smooth),
+    transform var(--dur-fast) var(--ease-smooth);
+}
+
+.quest-choice-button:hover {
+  border-color: var(--color-input-border-hover);
+}
+
+.quest-choice-button:focus-visible {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(10, 132, 255, 0.18);
+  transform: translateY(-1px);
+}
+
+.quest-choice-button.is-selected {
+  border-color: rgba(10, 132, 255, 0.62);
+  background: rgba(10, 132, 255, 0.14);
+}
+
+.quest-choice-key {
+  font-weight: 760;
+}
+
 .quest-field {
   display: grid;
   gap: 0.35rem;
