@@ -71,6 +71,11 @@ export class GameSessionService {
     };
   }
 
+  public resolveNextSequenceIndex(input: GameSessionInput): number {
+    const snapshot: GameSessionSnapshot = this.buildSnapshot(input);
+    return snapshot.nextLocation?.sequenceNumber ?? input.run.currentSequenceIndex;
+  }
+
   public evaluateCheckinEligibility(
     input: CheckinEligibilityInput
   ): CheckinEligibility {

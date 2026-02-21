@@ -132,9 +132,13 @@ export class ValidateQrCheckinUseCase
       await this.dependencies.checkinRepository.create(checkin);
     const checkinsAfterWrite: readonly Checkin[] = [...checkins, persistedCheckin];
 
-    let runAfterCheckin: Run = run.withCurrentSequenceIndex(
-      run.currentSequenceIndex + 1
-    );
+    const nextSequenceIndex: number =
+      this.dependencies.gameSessionService.resolveNextSequenceIndex({
+        run,
+        locations,
+        checkins: checkinsAfterWrite
+      });
+    let runAfterCheckin: Run = run.withCurrentSequenceIndex(nextSequenceIndex);
     let session: GameSessionSnapshot = this.dependencies.gameSessionService.buildSnapshot(
       {
         run: runAfterCheckin,
