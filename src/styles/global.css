@@ -577,6 +577,11 @@ body::after {
   display: grid;
   gap: 0.72rem;
   max-height: calc(100dvh - 2rem);
+  border: 1px solid rgba(176, 206, 234, 0.45);
+  border-radius: 1.06rem;
+  background: rgba(6, 15, 26, 0.7);
+  padding: 0.76rem;
+  box-shadow: 0 16px 32px rgba(3, 8, 14, 0.45);
   animation: modal-enter var(--dur-base) var(--ease-out) both;
 }
 
@@ -603,6 +608,10 @@ body::after {
   border-color: rgba(222, 233, 246, 0.62);
   color: #eaf3fc;
   background: rgba(255, 255, 255, 0.14);
+  min-height: 2.7rem;
+  padding: 0 0.88rem;
+  font-weight: 760;
+  flex-shrink: 0;
 }
 
 .quest-feedback {
@@ -966,7 +975,7 @@ select:focus-visible {
     transparent calc(100% - 0.24rem),
     #000 calc(100% - 0.23rem)
   );
-  animation: settings-gear-spin-ccw 8.2s linear infinite;
+  animation: settings-gear-spin-ccw 1.25s var(--ease-out) 1 both;
 }
 
 .settings-gear-ring--inner {
@@ -986,7 +995,7 @@ select:focus-visible {
     transparent calc(100% - 0.2rem),
     #000 calc(100% - 0.19rem)
   );
-  animation: settings-gear-spin-cw 5.4s linear infinite;
+  animation: settings-gear-spin-cw 1.05s var(--ease-out) 1 both;
 }
 
 .settings-gear-core {
@@ -996,6 +1005,20 @@ select:focus-visible {
   border: 1px solid rgba(74, 110, 144, 0.52);
   background: linear-gradient(180deg, #f7fbff, #dbe8f5);
   box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.7);
+}
+
+.settings-launcher:hover .settings-gear-ring--outer,
+.settings-launcher:focus-visible .settings-gear-ring--outer,
+.settings-launcher:active .settings-gear-ring--outer,
+.settings-launcher--open .settings-gear-ring--outer {
+  animation: settings-gear-spin-ccw 1.8s linear infinite;
+}
+
+.settings-launcher:hover .settings-gear-ring--inner,
+.settings-launcher:focus-visible .settings-gear-ring--inner,
+.settings-launcher:active .settings-gear-ring--inner,
+.settings-launcher--open .settings-gear-ring--inner {
+  animation: settings-gear-spin-cw 1.3s linear infinite;
 }
 
 .language-switcher {
@@ -1775,6 +1798,12 @@ html[data-theme="dark"] .quest-button--ghost:not(:disabled):active {
     box-shadow: 0 14px 28px rgba(13, 33, 52, 0.2);
   }
 
+  .quest-mobile-actionbar .quest-button {
+    min-height: 3.02rem;
+    font-size: 0.98rem;
+    font-weight: 760;
+  }
+
   .qr-scanner-overlay {
     align-items: stretch;
     padding:
@@ -1787,6 +1816,8 @@ html[data-theme="dark"] .quest-button--ghost:not(:disabled):active {
     width: 100%;
     max-height: 100%;
     gap: 0.55rem;
+    border-radius: 0.9rem;
+    padding: 0.62rem;
   }
 
   .qr-scanner-toolbar {
@@ -1798,8 +1829,8 @@ html[data-theme="dark"] .quest-button--ghost:not(:disabled):active {
   }
 
   .qr-scanner-video {
-    height: calc(100dvh - 6.35rem);
-    min-height: 24rem;
+    height: min(82dvh, calc(100dvh - 5.2rem));
+    min-height: 22rem;
     border-radius: 0.82rem;
   }
 }

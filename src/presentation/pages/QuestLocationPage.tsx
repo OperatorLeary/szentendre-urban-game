@@ -786,12 +786,6 @@ function QuestLocationPage(): JSX.Element {
   const progressPercentage: number = runSession.data.session.completionPercentage;
   const hasAnswer: boolean = answerText.trim().length > 0;
   const nextLocationName: string | null = runSession.data.session.nextLocation?.name ?? null;
-  const previousLocationName: string =
-    runSession.data.locations.find(
-      (stationLocation: Location): boolean =>
-        stationLocation.sequenceNumber === activeLocation.sequenceNumber - 1
-    )?.name ?? t("quest.timelineNone");
-  const timelineNextLocationName: string = nextLocationName ?? t("quest.timelineNone");
   const summaryRouteSlug: string = runSession.data.route.slug;
   const isRunCompleted: boolean = runSession.data.session.isCompleted;
   const summaryCompletedAt: Date = completionTimestamp ?? new Date();
@@ -934,20 +928,6 @@ function QuestLocationPage(): JSX.Element {
               : t("quest.offlineBannerQueued")}
           </p>
         ) : null}
-        <div className="quest-timeline" role="list" aria-label={t("quest.timelineTitle")}>
-          <article className="quest-timeline-item" role="listitem">
-            <p className="quest-timeline-label">{t("quest.timelinePrevious")}</p>
-            <p className="quest-timeline-value">{previousLocationName}</p>
-          </article>
-          <article className="quest-timeline-item quest-timeline-item--current" role="listitem">
-            <p className="quest-timeline-label">{t("quest.timelineCurrent")}</p>
-            <p className="quest-timeline-value">{activeLocation.name}</p>
-          </article>
-          <article className="quest-timeline-item" role="listitem">
-            <p className="quest-timeline-label">{t("quest.timelineNext")}</p>
-            <p className="quest-timeline-value">{timelineNextLocationName}</p>
-          </article>
-        </div>
       </section>
 
       <section className="quest-panel">
