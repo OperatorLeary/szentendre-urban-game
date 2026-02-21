@@ -79,14 +79,6 @@ export function SettingsLauncher(): JSX.Element {
                   <h2 id="settings-panel-title" className="settings-panel-title">
                     {t("settings.title")}
                   </h2>
-                  <button
-                    type="button"
-                    className="settings-panel-close"
-                    aria-label={t("settings.closeAriaLabel")}
-                    onClick={closeSettings}
-                  >
-                    x
-                  </button>
                 </header>
                 <p className="settings-panel-copy">{t("settings.copy")}</p>
                 <div className="settings-panel-controls">
