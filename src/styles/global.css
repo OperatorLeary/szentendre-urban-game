@@ -680,7 +680,7 @@ body::after {
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: 0.5rem;
-  z-index: 1200;
+  z-index: 1360;
 }
 
 .language-switcher {
