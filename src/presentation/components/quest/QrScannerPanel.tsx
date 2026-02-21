@@ -28,9 +28,35 @@ interface QrScanResultLike {
 const SCANNER_ERROR_THROTTLE_MS = 2200;
 const SCANNER_START_TIMEOUT_MS = 10_000;
 
+function extractErrorText(error: unknown): string {
+  if (typeof error === "string") {
+    return error;
+  }
+
+  if (error !== null && typeof error === "object") {
+    const candidate = error as {
+      readonly message?: unknown;
+      readonly name?: unknown;
+      readonly code?: unknown;
+    };
+    if (typeof candidate.message === "string" && candidate.message.trim().length > 0) {
+      return candidate.message;
+    }
+
+    if (typeof candidate.name === "string" && candidate.name.trim().length > 0) {
+      return candidate.name;
+    }
+
+    if (typeof candidate.code === "string" && candidate.code.trim().length > 0) {
+      return candidate.code;
+    }
+  }
+
+  return "";
+}
+
 function toErrorSignal(error: unknown): string {
-  const rawMessage: string =
-    error instanceof Error ? error.message : typeof error === "string" ? error : "";
+  const rawMessage: string = extractErrorText(error);
   return rawMessage.toLowerCase();
 }
 
@@ -78,8 +104,7 @@ function mapScannerErrorMessage(
   error: unknown,
   t: ReturnType<typeof useLanguage>["t"]
 ): string {
-  const rawMessage: string =
-    error instanceof Error ? error.message : typeof error === "string" ? error : "";
+  const rawMessage: string = extractErrorText(error);
   const signal: string = toErrorSignal(error);
 
   if (signal.includes("no_frames") || signal.includes("camera stream did not become ready")) {
@@ -120,61 +145,6 @@ function mapScannerErrorMessage(
   }
 
   return t("qrScanner.startFailed");
-}
-
-async function waitForVideoReady(
-  videoElement: HTMLVideoElement,
-  timeoutMs: number
-): Promise<void> {
-  if (
-    videoElement.srcObject !== null &&
-    videoElement.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA &&
-    videoElement.videoWidth > 0
-  ) {
-    return;
-  }
-
-  await new Promise<void>((resolve, reject): void => {
-    let settled = false;
-
-    const cleanup = (): void => {
-      videoElement.removeEventListener("playing", handleReady);
-      videoElement.removeEventListener("loadedmetadata", handleReady);
-      videoElement.removeEventListener("canplay", handleReady);
-      videoElement.removeEventListener("error", handleError);
-      window.clearTimeout(timeoutId);
-    };
-
-    const settle = (callback: () => void): void => {
-      if (settled) {
-        return;
-      }
-      settled = true;
-      cleanup();
-      callback();
-    };
-
-    const handleReady = (): void => {
-      settle(resolve);
-    };
-
-    const handleError = (): void => {
-      settle((): void => {
-        reject(new Error("camera stream did not become ready: no_frames"));
-      });
-    };
-
-    videoElement.addEventListener("playing", handleReady);
-    videoElement.addEventListener("loadedmetadata", handleReady);
-    videoElement.addEventListener("canplay", handleReady);
-    videoElement.addEventListener("error", handleError);
-
-    const timeoutId = window.setTimeout((): void => {
-      settle((): void => {
-        reject(new Error("camera stream did not become ready: no_frames"));
-      });
-    }, timeoutMs);
-  });
 }
 
 export function QrScannerPanel({
@@ -260,6 +230,7 @@ export function QrScannerPanel({
     }
 
     let isCancelled = false;
+    let hasScannerActivity = false;
     const videoElement = videoRef.current;
     controlsRef.current = null;
     const isSessionCancelled = (): boolean => isCancelled;
@@ -275,6 +246,38 @@ export function QrScannerPanel({
 
     setScannerState("starting");
     setScannerErrorMessage(null);
+
+    const markReady = (): void => {
+      if (isCancelled || hasScannerActivity) {
+        return;
+      }
+
+      hasScannerActivity = true;
+      setScannerState("ready");
+      setScannerErrorMessage(null);
+      setIsRetrying(false);
+      logScannerEvent("stream_ready");
+    };
+
+    const handleVideoSignal = (): void => {
+      markReady();
+    };
+
+    videoElement.addEventListener("playing", handleVideoSignal);
+    videoElement.addEventListener("loadedmetadata", handleVideoSignal);
+    videoElement.addEventListener("canplay", handleVideoSignal);
+
+    const startupTimeoutId = window.setTimeout((): void => {
+      if (isCancelled || hasScannerActivity) {
+        return;
+      }
+
+      const timeoutMessage = translationRef.current("qrScanner.noFrames");
+      logScannerEvent("start_timeout", {
+        timeoutMs: SCANNER_START_TIMEOUT_MS
+      });
+      reportScannerError(timeoutMessage);
+    }, SCANNER_START_TIMEOUT_MS);
 
     const reportScannerError = (message: string): void => {
       if (isCancelled) {
@@ -303,6 +306,8 @@ export function QrScannerPanel({
             if (isCancelled) {
               return;
             }
+
+            markReady();
 
             if (result !== undefined) {
               const payload: string = result.getText();
@@ -384,18 +389,6 @@ export function QrScannerPanel({
         logScannerEvent("start_attempt_succeeded", {
           attempt: scannerStartResult.attempt.name
         });
-
-        await waitForVideoReady(videoElement, SCANNER_START_TIMEOUT_MS);
-        if (isSessionCancelled()) {
-          return;
-        }
-
-        setScannerState("ready");
-        setScannerErrorMessage(null);
-        setIsRetrying(false);
-        logScannerEvent("stream_ready", {
-          timeoutMs: SCANNER_START_TIMEOUT_MS
-        });
       } catch (error) {
         const mappedMessage = mapScannerErrorMessage(error, translationRef.current);
         logScannerEvent("start_failed", {
@@ -412,6 +405,10 @@ export function QrScannerPanel({
 
     return (): void => {
       isCancelled = true;
+      window.clearTimeout(startupTimeoutId);
+      videoElement.removeEventListener("playing", handleVideoSignal);
+      videoElement.removeEventListener("loadedmetadata", handleVideoSignal);
+      videoElement.removeEventListener("canplay", handleVideoSignal);
       logScannerEvent("cleanup");
       stopScannerControls(controlsRef.current);
       controlsRef.current = null;

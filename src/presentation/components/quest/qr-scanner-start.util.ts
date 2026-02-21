@@ -9,8 +9,13 @@ export interface QrScannerStartAttempt {
 
 export interface StartQrScannerWithFallbackInput<ResultType> {
   readonly reader: {
-    decodeFromConstraints: (
+    decodeFromConstraints?: (
       constraints: MediaStreamConstraints,
+      videoElement: HTMLVideoElement,
+      onDecode: (result: ResultType | undefined, error: unknown) => void
+    ) => Promise<QrScannerReaderControls>;
+    decodeFromVideoDevice?: (
+      deviceId: string | undefined,
       videoElement: HTMLVideoElement,
       onDecode: (result: ResultType | undefined, error: unknown) => void
     ) => Promise<QrScannerReaderControls>;
@@ -70,6 +75,10 @@ export async function startQrScannerWithFallback<ResultType>(
   let lastError: unknown = null;
   for (const attempt of attempts) {
     try {
+      if (typeof input.reader.decodeFromConstraints !== "function") {
+        throw new Error("decodeFromConstraints is not available.");
+      }
+
       const controls = await input.reader.decodeFromConstraints(
         attempt.constraints,
         input.videoElement,
@@ -83,6 +92,36 @@ export async function startQrScannerWithFallback<ResultType>(
       lastError = error;
       input.onAttemptFailure?.({
         attempt,
+        error
+      });
+    }
+  }
+
+  if (typeof input.reader.decodeFromVideoDevice === "function") {
+    try {
+      const controls = await input.reader.decodeFromVideoDevice(
+        undefined,
+        input.videoElement,
+        input.onDecode
+      );
+      return {
+        controls,
+        attempt: {
+          name: "any_video",
+          constraints: {
+            video: true
+          }
+        }
+      };
+    } catch (error) {
+      lastError = error;
+      input.onAttemptFailure?.({
+        attempt: {
+          name: "any_video",
+          constraints: {
+            video: true
+          }
+        },
         error
       });
     }
