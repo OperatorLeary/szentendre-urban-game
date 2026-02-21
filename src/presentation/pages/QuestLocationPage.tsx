@@ -84,7 +84,7 @@ function resolveLocalizedStationText(
     return hungarianText ?? defaultText;
   }
 
-  return defaultText ?? hungarianText;
+  return defaultText;
 }
 
 function padTimeUnit(value: number): string {
