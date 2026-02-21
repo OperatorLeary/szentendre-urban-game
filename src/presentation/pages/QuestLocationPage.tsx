@@ -759,6 +759,27 @@ function QuestLocationPage(): JSX.Element {
     [performQrValidation]
   );
 
+  const handleQuestScannerClose = useCallback((): void => {
+    setIsScannerVisible(false);
+  }, []);
+
+  const handleQuestScannerDetected = useCallback(
+    (payload: string): void => {
+      setIsScannerVisible(false);
+      play("tap");
+      void validateWithQr(payload);
+    },
+    [play, validateWithQr]
+  );
+
+  const handleQuestScannerError = useCallback(
+    (message: string): void => {
+      setFeedbackMessage(message);
+      play("error");
+    },
+    [play]
+  );
+
   useEffect(() => {
     if (!isOnline || pendingValidation === null || locationValidation.isSubmitting) {
       return;
@@ -1190,18 +1211,9 @@ function QuestLocationPage(): JSX.Element {
 
             <QrScannerPanel
               isActive={isScannerVisible}
-              onClose={(): void => {
-                setIsScannerVisible(false);
-              }}
-              onDetected={(payload: string): void => {
-                setIsScannerVisible(false);
-                play("tap");
-                void validateWithQr(payload);
-              }}
-              onError={(message: string): void => {
-                setFeedbackMessage(message);
-                play("error");
-              }}
+              onClose={handleQuestScannerClose}
+              onDetected={handleQuestScannerDetected}
+              onError={handleQuestScannerError}
             />
           </>
         )}

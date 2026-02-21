@@ -351,6 +351,23 @@ function HomePage(): JSX.Element {
     [gameUseCases, logger, navigate, play, playerAlias, selectedQrProfile, t]
   );
 
+  const handleHomeScannerClose = useCallback((): void => {
+    setIsScannerVisible(false);
+  }, []);
+
+  const handleHomeScannerDetected = useCallback(
+    (payload: string): void => {
+      setIsScannerVisible(false);
+      setScannerErrorMessage(null);
+      continueWithQrPayload(payload);
+    },
+    [continueWithQrPayload]
+  );
+
+  const handleHomeScannerError = useCallback((message: string): void => {
+    setScannerErrorMessage(message);
+  }, []);
+
   const requestGpsPermission = useCallback(async (): Promise<void> => {
     if (typeof navigator === "undefined" || !("geolocation" in navigator)) {
       setGpsPermission("unsupported");
@@ -606,17 +623,9 @@ function HomePage(): JSX.Element {
 
         <QrScannerPanel
           isActive={isScannerVisible}
-          onClose={(): void => {
-            setIsScannerVisible(false);
-          }}
-          onDetected={(payload: string): void => {
-            setIsScannerVisible(false);
-            setScannerErrorMessage(null);
-            continueWithQrPayload(payload);
-          }}
-          onError={(message: string): void => {
-            setScannerErrorMessage(message);
-          }}
+          onClose={handleHomeScannerClose}
+          onDetected={handleHomeScannerDetected}
+          onError={handleHomeScannerError}
         />
         {scannerErrorMessage !== null ? (
           <p className="quest-error" role="alert">

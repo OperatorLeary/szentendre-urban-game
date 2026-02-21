@@ -45,6 +45,10 @@ Use this checklist before promoting changes to `main`.
 - GPS invalid path: rejects outside radius.
 - QR override valid path: accepted for correct station QR.
 - QR override invalid path: rejected for mismatched QR.
+- Camera scanner stability:
+  - open scanner -> close -> reopen 3x on mobile
+  - no flicker lock, no frozen black overlay
+  - after closing scanner, answer input is visible + editable
 - Teacher override path:
   - `teacher-bypass` should be accepted (supervised/demo mode).
 

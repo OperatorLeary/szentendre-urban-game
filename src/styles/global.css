@@ -563,7 +563,7 @@ body::after {
 .qr-scanner-overlay {
   position: fixed;
   inset: 0;
-  z-index: 1300;
+  z-index: 1510;
   display: grid;
   place-items: center;
   padding: 1rem;
@@ -914,6 +914,11 @@ select:focus-visible {
   justify-content: flex-end;
   gap: 0.5rem;
   z-index: 1405;
+}
+
+body.scanner-active .top-controls {
+  pointer-events: none;
+  opacity: 0.42;
 }
 
 .settings-launcher {

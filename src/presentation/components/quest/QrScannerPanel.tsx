@@ -1,8 +1,9 @@
-import { useEffect, useRef, type JSX } from "react";
+import { useCallback, useEffect, useRef, type JSX } from "react";
 import { createPortal } from "react-dom";
 
 import { useLanguage } from "@/presentation/app/LanguageContext";
 import { useDialogA11y } from "@/presentation/hooks/useDialogA11y";
+import { cleanupQrScannerVideo } from "@/presentation/components/quest/qr-scanner-media.util";
 
 interface QrScannerPanelProps {
   readonly isActive: boolean;
@@ -16,6 +17,16 @@ interface ReaderControls {
 }
 
 const SCANNER_ERROR_THROTTLE_MS = 2200;
+const SCANNER_START_TIMEOUT_MS = 10_000;
+
+function logScannerEvent(event: string, metadata?: Readonly<Record<string, unknown>>): void {
+  if (metadata !== undefined) {
+    console.info(`[QrScannerPanel] ${event}`, metadata);
+    return;
+  }
+
+  console.info(`[QrScannerPanel] ${event}`);
+}
 
 function mapScannerErrorMessage(
   error: unknown,
@@ -64,12 +75,40 @@ export function QrScannerPanel({
   const lastErrorRef = useRef<{ readonly message: string; readonly timestamp: number } | null>(
     null
   );
+  const onDetectedRef = useRef<(payload: string) => void>(onDetected);
+  const onErrorRef = useRef<(message: string) => void>(onError);
+
+  useEffect((): void => {
+    onDetectedRef.current = onDetected;
+    onErrorRef.current = onError;
+  }, [onDetected, onError]);
+
+  const requestClose = useCallback((): void => {
+    logScannerEvent("close_requested");
+    onClose();
+  }, [onClose]);
 
   useDialogA11y({
     isOpen: isActive,
     containerRef: frameRef,
-    onRequestClose: onClose
+    onRequestClose: requestClose
   });
+
+  useEffect(() => {
+    if (typeof document === "undefined") {
+      return;
+    }
+
+    if (!isActive) {
+      document.body.classList.remove("scanner-active");
+      return;
+    }
+
+    document.body.classList.add("scanner-active");
+    return (): void => {
+      document.body.classList.remove("scanner-active");
+    };
+  }, [isActive]);
 
   useEffect(() => {
     if (!isActive) {
@@ -78,14 +117,45 @@ export function QrScannerPanel({
 
     let controls: ReaderControls | null = null;
     let isCancelled = false;
+    let isStreamReady = false;
+    let startupTimeoutId: number | undefined;
+    const videoElement = videoRef.current;
+
+    if (videoElement === null) {
+      logScannerEvent("start_aborted_missing_video_element");
+      return;
+    }
+
+    const handleVideoPlaying = (): void => {
+      isStreamReady = true;
+      if (startupTimeoutId !== undefined) {
+        window.clearTimeout(startupTimeoutId);
+        startupTimeoutId = undefined;
+      }
+      logScannerEvent("stream_ready");
+    };
+
+    videoElement.addEventListener("playing", handleVideoPlaying);
+
+    startupTimeoutId = window.setTimeout((): void => {
+      if (isCancelled || isStreamReady) {
+        return;
+      }
+
+      const timeoutMessage = t("qrScanner.startFailed");
+      logScannerEvent("start_timeout", {
+        timeoutMs: SCANNER_START_TIMEOUT_MS
+      });
+      onErrorRef.current(timeoutMessage);
+    }, SCANNER_START_TIMEOUT_MS);
 
     const startScanner = async (): Promise<void> => {
       try {
+        logScannerEvent("start_attempt");
         const module = await import("@zxing/browser");
         const reader = new module.BrowserQRCodeReader();
 
-        const videoElement = videoRef.current;
-        if (videoElement === null || isCancelled) {
+        if (isCancelled) {
           return;
         }
 
@@ -98,8 +168,13 @@ export function QrScannerPanel({
             }
 
             if (result !== undefined) {
-              onDetected(result.getText());
+              const payload: string = result.getText();
+              logScannerEvent("scan_success", {
+                payloadLength: payload.length
+              });
               controls?.stop();
+              cleanupQrScannerVideo(videoElement);
+              onDetectedRef.current(payload);
               return;
             }
 
@@ -120,13 +195,20 @@ export function QrScannerPanel({
                   message,
                   timestamp: now
                 };
-                onError(message);
+                logScannerEvent("scan_error", {
+                  message
+                });
+                onErrorRef.current(message);
               }
             }
           }
         )) as ReaderControls;
       } catch (error) {
-        onError(mapScannerErrorMessage(error, t));
+        const mappedMessage = mapScannerErrorMessage(error, t);
+        logScannerEvent("start_failed", {
+          message: mappedMessage
+        });
+        onErrorRef.current(mappedMessage);
       }
     };
 
@@ -134,9 +216,15 @@ export function QrScannerPanel({
 
     return (): void => {
       isCancelled = true;
+      if (startupTimeoutId !== undefined) {
+        window.clearTimeout(startupTimeoutId);
+      }
+      videoElement.removeEventListener("playing", handleVideoPlaying);
+      logScannerEvent("cleanup");
       controls?.stop();
+      cleanupQrScannerVideo(videoElement);
     };
-  }, [isActive, onDetected, onError, t]);
+  }, [isActive, t]);
 
   if (!isActive) {
     return null;
@@ -155,7 +243,7 @@ export function QrScannerPanel({
       aria-describedby="qr-scanner-note"
       onMouseDown={(event): void => {
         if (event.target === event.currentTarget) {
-          onClose();
+          requestClose();
         }
       }}
     >
@@ -167,7 +255,7 @@ export function QrScannerPanel({
           <button
             type="button"
             className="quest-button quest-button--ghost qr-scanner-close"
-            onClick={onClose}
+            onClick={requestClose}
           >
             {t("qrScanner.close")}
           </button>
