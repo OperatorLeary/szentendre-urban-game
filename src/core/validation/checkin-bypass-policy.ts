@@ -4,9 +4,9 @@ import {
 } from "@/core/constants/domain.constants";
 import { normalizeNonEmptyText } from "@/core/validation/domain-assertions";
 
-// Phase 0 hardening: no global bypass answers in production runtime.
-// Keep this list empty unless a temporary, explicitly approved override is needed.
-const GLOBAL_BYPASS_ANSWERS: readonly string[] = Object.freeze([]);
+// Temporary teacher override for supervised demos/classes.
+// Normalization is lower-case + trim, so `teacher-bypass` is sufficient here.
+const GLOBAL_BYPASS_ANSWERS: readonly string[] = Object.freeze(["teacher-bypass"]);
 
 export function isGlobalBypassAnswer(answerText: string): boolean {
   let normalizedAnswer: string;
