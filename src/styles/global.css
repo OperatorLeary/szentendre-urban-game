@@ -381,6 +381,10 @@ body::after {
   font-weight: 760;
 }
 
+.quest-manual-answer-toggle {
+  margin-top: 0.7rem;
+}
+
 .quest-field {
   display: grid;
   gap: 0.35rem;

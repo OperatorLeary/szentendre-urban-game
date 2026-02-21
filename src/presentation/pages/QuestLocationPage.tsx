@@ -369,6 +369,7 @@ function QuestLocationPage(): JSX.Element {
   const [celebrationBurstToken, setCelebrationBurstToken] = useState<number>(0);
   const [showCelebration, setShowCelebration] = useState<boolean>(false);
   const [isFinalCelebration, setIsFinalCelebration] = useState<boolean>(false);
+  const [isManualAnswerVisible, setIsManualAnswerVisible] = useState<boolean>(false);
   const [navigationMode, setNavigationMode] = useState<NavigationMode>(
     resolveInitialNavigationMode
   );
@@ -848,6 +849,11 @@ function QuestLocationPage(): JSX.Element {
     void navigate(ROUTES.home, { replace: true });
   }, [navigate, play, runControl, t]);
 
+  const activeLocationIdForUiReset: string | null = runSession.data?.requestedLocation.id ?? null;
+  useEffect((): void => {
+    setIsManualAnswerVisible(false);
+  }, [activeLocationIdForUiReset]);
+
   if (runSession.isLoading || runSession.data === null || activeLocation === null) {
     return (
       <main className="quest-shell">
@@ -879,6 +885,8 @@ function QuestLocationPage(): JSX.Element {
       : activeLocation.questionPrompt;
   const questionOptions: readonly ParsedQuestionOption[] =
     parseQuestionOptions(localizedQuestionPrompt);
+  const hasQuestionOptions: boolean = questionOptions.length >= 2;
+  const shouldShowManualAnswerInput: boolean = !hasQuestionOptions || isManualAnswerVisible;
   const fallbackNavigationTextHint: string = t("quest.navigationTextHint", {
     stationName: activeLocation.name,
     stationSequence: String(activeLocation.sequenceNumber)
@@ -1188,31 +1196,49 @@ function QuestLocationPage(): JSX.Element {
                 })}
               </div>
             ) : null}
-            <label className="quest-field">
-              <span className="quest-field-label">{t("quest.yourAnswerLabel")}</span>
-              <input
-                className="quest-input"
-                data-testid="quest-answer-input"
-                value={answerText}
-                placeholder={t("quest.yourAnswerLabel")}
-                aria-label={t("quest.yourAnswerLabel")}
-                autoComplete="off"
-                onChange={(event: ChangeEvent<HTMLInputElement>): void => {
-                  setAnswerText(event.target.value);
-                }}
-                onKeyDown={(event: KeyboardEvent<HTMLInputElement>): void => {
-                  if (event.key !== "Enter" || !hasAnswer || locationValidation.isSubmitting) {
-                    return;
-                  }
-
-                  event.preventDefault();
+            {hasQuestionOptions ? (
+              <button
+                type="button"
+                className="quest-button quest-button--ghost quest-manual-answer-toggle"
+                onClick={(): void => {
                   play("tap");
-                  void validateWithGps();
+                  setIsManualAnswerVisible((current): boolean => !current);
                 }}
-                maxLength={300}
-              />
-            </label>
-            <p className="quest-muted quest-answer-hint">{t("quest.answerQuickHint")}</p>
+              >
+                {isManualAnswerVisible
+                  ? t("quest.hideManualAnswerInput")
+                  : t("quest.showManualAnswerInput")}
+              </button>
+            ) : null}
+            {shouldShowManualAnswerInput ? (
+              <>
+                <label className="quest-field">
+                  <span className="quest-field-label">{t("quest.yourAnswerLabel")}</span>
+                  <input
+                    className="quest-input"
+                    data-testid="quest-answer-input"
+                    value={answerText}
+                    placeholder={t("quest.yourAnswerLabel")}
+                    aria-label={t("quest.yourAnswerLabel")}
+                    autoComplete="off"
+                    onChange={(event: ChangeEvent<HTMLInputElement>): void => {
+                      setAnswerText(event.target.value);
+                    }}
+                    onKeyDown={(event: KeyboardEvent<HTMLInputElement>): void => {
+                      if (event.key !== "Enter" || !hasAnswer || locationValidation.isSubmitting) {
+                        return;
+                      }
+
+                      event.preventDefault();
+                      play("tap");
+                      void validateWithGps();
+                    }}
+                    maxLength={300}
+                  />
+                </label>
+                <p className="quest-muted quest-answer-hint">{t("quest.answerQuickHint")}</p>
+              </>
+            ) : null}
 
             <div className="quest-actions quest-actions--inline">
               <button
