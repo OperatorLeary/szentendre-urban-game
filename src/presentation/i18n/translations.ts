@@ -249,9 +249,16 @@ const hu = {
     "A kamera-hozzáférés le van tiltva. Engedélyezd, majd próbáld újra.",
   "qrScanner.noCamera":
     "Nem található használható kamera ezen az eszközön.",
+  "qrScanner.cameraInUse":
+    "A kamerát egy másik alkalmazás használja. Zárd be azt, majd próbáld újra.",
+  "qrScanner.noFrames":
+    "A kamera elindult, de nem érkezik kép. Próbáld újra.",
   "qrScanner.insecureContext":
     "A kamera csak biztonságos (https) oldalon érhető el.",
   "qrScanner.overlayHint": "Irányítsd a kamerát a QR-kódra.",
+  "qrScanner.starting": "Kamera indítása...",
+  "qrScanner.retry": "Újrapróbálás",
+  "qrScanner.retrying": "Kamera újraindítása...",
   "qrScanner.close": "Bezárás",
   "map.you": "Te",
   "map.ariaLabel": "Kaland térkép",
@@ -508,9 +515,16 @@ const en: Record<TranslationKey, string> = {
     "Camera access is blocked. Allow permission and try again.",
   "qrScanner.noCamera":
     "No usable camera was found on this device.",
+  "qrScanner.cameraInUse":
+    "Camera is being used by another app. Close it and try again.",
+  "qrScanner.noFrames":
+    "Camera started but no frames are arriving. Please retry.",
   "qrScanner.insecureContext":
     "Camera access requires a secure (https) page.",
   "qrScanner.overlayHint": "Point your camera at the QR code.",
+  "qrScanner.starting": "Starting camera...",
+  "qrScanner.retry": "Retry",
+  "qrScanner.retrying": "Retrying camera...",
   "qrScanner.close": "Close",
   "map.you": "You",
   "map.ariaLabel": "Quest map",

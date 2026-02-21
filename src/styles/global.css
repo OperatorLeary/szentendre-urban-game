@@ -564,7 +564,7 @@ body::after {
 .qr-scanner-overlay {
   position: fixed;
   inset: 0;
-  z-index: 1510;
+  z-index: 1610;
   display: grid;
   place-items: center;
   padding: 1rem;
@@ -605,6 +605,12 @@ body::after {
   font-size: 0.86rem;
 }
 
+.qr-scanner-viewport {
+  position: relative;
+  border-radius: 1.05rem;
+  overflow: hidden;
+}
+
 .qr-scanner-close {
   border-color: rgba(222, 233, 246, 0.62);
   color: #eaf3fc;
@@ -613,6 +619,48 @@ body::after {
   padding: 0 0.88rem;
   font-weight: 760;
   flex-shrink: 0;
+}
+
+.qr-scanner-status {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 0.72rem;
+  text-align: center;
+  padding: 1rem;
+  background: rgba(4, 11, 20, 0.68);
+  border-radius: 1.05rem;
+  z-index: 1;
+}
+
+.qr-scanner-status--error {
+  background: rgba(7, 15, 27, 0.9);
+}
+
+.qr-scanner-status-title {
+  margin: 0;
+  color: #e9f2fc;
+  font-weight: 680;
+  max-width: 32rem;
+}
+
+.qr-scanner-status-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.56rem;
+}
+
+.qr-scanner-spinner {
+  width: 1.8rem;
+  height: 1.8rem;
+  border-radius: 999px;
+  border: 2px solid rgba(181, 214, 247, 0.38);
+  border-top-color: #57adff;
+  animation: qr-scanner-spin 900ms linear infinite;
 }
 
 .quest-feedback {
@@ -1804,6 +1852,11 @@ html[data-theme="dark"] .quest-button--ghost:not(:disabled):active {
     padding: 0.62rem;
   }
 
+  .qr-scanner-viewport,
+  .qr-scanner-status {
+    border-radius: 0.82rem;
+  }
+
   .qr-scanner-toolbar {
     align-items: flex-start;
   }
@@ -1817,6 +1870,15 @@ html[data-theme="dark"] .quest-button--ghost:not(:disabled):active {
     min-height: 22rem;
     border-radius: 0.82rem;
   }
+
+  .qr-scanner-status-title {
+    font-size: 0.95rem;
+  }
+
+  .qr-scanner-status-actions .quest-button {
+    min-height: 2.75rem;
+    min-width: 6.2rem;
+  }
 }
 
 @keyframes route-enter-forward {
@@ -1828,6 +1890,16 @@ html[data-theme="dark"] .quest-button--ghost:not(:disabled):active {
   to {
     opacity: 1;
     transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes qr-scanner-spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
   }
 }
 

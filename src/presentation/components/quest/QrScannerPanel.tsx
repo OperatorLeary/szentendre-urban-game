@@ -1,9 +1,16 @@
-import { useCallback, useEffect, useRef, type JSX } from "react";
+import { useCallback, useEffect, useRef, useState, type JSX } from "react";
 import { createPortal } from "react-dom";
 
 import { useLanguage } from "@/presentation/app/LanguageContext";
+import {
+  cleanupQrScannerVideo
+} from "@/presentation/components/quest/qr-scanner-media.util";
+import {
+  getDefaultQrScannerStartAttempts,
+  startQrScannerWithFallback,
+  type QrScannerReaderControls
+} from "@/presentation/components/quest/qr-scanner-start.util";
 import { useDialogA11y } from "@/presentation/hooks/useDialogA11y";
-import { cleanupQrScannerVideo } from "@/presentation/components/quest/qr-scanner-media.util";
 
 interface QrScannerPanelProps {
   readonly isActive: boolean;
@@ -12,12 +19,43 @@ interface QrScannerPanelProps {
   readonly onClose: () => void;
 }
 
-interface ReaderControls {
-  stop: () => void;
+type ScannerState = "idle" | "starting" | "ready" | "error";
+
+interface QrScanResultLike {
+  getText: () => string;
 }
 
 const SCANNER_ERROR_THROTTLE_MS = 2200;
 const SCANNER_START_TIMEOUT_MS = 10_000;
+
+function toErrorSignal(error: unknown): string {
+  const rawMessage: string =
+    error instanceof Error ? error.message : typeof error === "string" ? error : "";
+  return rawMessage.toLowerCase();
+}
+
+function isNotFoundDecodeSignal(signal: string): boolean {
+  return signal.includes("notfoundexception");
+}
+
+function isFatalScannerSignal(signal: string): boolean {
+  if (isNotFoundDecodeSignal(signal)) {
+    return false;
+  }
+
+  return (
+    signal.includes("notallowederror") ||
+    signal.includes("permission denied") ||
+    signal.includes("permissiondismissederror") ||
+    signal.includes("notreadableerror") ||
+    signal.includes("device in use") ||
+    signal.includes("track start failed") ||
+    signal.includes("could not start video source") ||
+    signal.includes("aborterror") ||
+    signal.includes("no_frames") ||
+    signal.includes("camera stream did not become ready")
+  );
+}
 
 function logScannerEvent(event: string, metadata?: Readonly<Record<string, unknown>>): void {
   if (metadata !== undefined) {
@@ -28,13 +66,25 @@ function logScannerEvent(event: string, metadata?: Readonly<Record<string, unkno
   console.info(`[QrScannerPanel] ${event}`);
 }
 
+function stopScannerControls(controls: QrScannerReaderControls | null): void {
+  if (controls === null) {
+    return;
+  }
+
+  controls.stop();
+}
+
 function mapScannerErrorMessage(
   error: unknown,
   t: ReturnType<typeof useLanguage>["t"]
 ): string {
   const rawMessage: string =
     error instanceof Error ? error.message : typeof error === "string" ? error : "";
-  const signal: string = rawMessage.toLowerCase();
+  const signal: string = toErrorSignal(error);
+
+  if (signal.includes("no_frames") || signal.includes("camera stream did not become ready")) {
+    return t("qrScanner.noFrames");
+  }
 
   if (
     signal.includes("notallowederror") ||
@@ -42,6 +92,15 @@ function mapScannerErrorMessage(
     signal.includes("permissiondismissederror")
   ) {
     return t("qrScanner.permissionDenied");
+  }
+
+  if (
+    signal.includes("notreadableerror") ||
+    signal.includes("device in use") ||
+    signal.includes("track start failed") ||
+    signal.includes("could not start video source")
+  ) {
+    return t("qrScanner.cameraInUse");
   }
 
   if (
@@ -63,6 +122,61 @@ function mapScannerErrorMessage(
   return t("qrScanner.startFailed");
 }
 
+async function waitForVideoReady(
+  videoElement: HTMLVideoElement,
+  timeoutMs: number
+): Promise<void> {
+  if (
+    videoElement.srcObject !== null &&
+    videoElement.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA &&
+    videoElement.videoWidth > 0
+  ) {
+    return;
+  }
+
+  await new Promise<void>((resolve, reject): void => {
+    let settled = false;
+
+    const cleanup = (): void => {
+      videoElement.removeEventListener("playing", handleReady);
+      videoElement.removeEventListener("loadedmetadata", handleReady);
+      videoElement.removeEventListener("canplay", handleReady);
+      videoElement.removeEventListener("error", handleError);
+      window.clearTimeout(timeoutId);
+    };
+
+    const settle = (callback: () => void): void => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      cleanup();
+      callback();
+    };
+
+    const handleReady = (): void => {
+      settle(resolve);
+    };
+
+    const handleError = (): void => {
+      settle((): void => {
+        reject(new Error("camera stream did not become ready: no_frames"));
+      });
+    };
+
+    videoElement.addEventListener("playing", handleReady);
+    videoElement.addEventListener("loadedmetadata", handleReady);
+    videoElement.addEventListener("canplay", handleReady);
+    videoElement.addEventListener("error", handleError);
+
+    const timeoutId = window.setTimeout((): void => {
+      settle((): void => {
+        reject(new Error("camera stream did not become ready: no_frames"));
+      });
+    }, timeoutMs);
+  });
+}
+
 export function QrScannerPanel({
   isActive,
   onDetected,
@@ -70,8 +184,14 @@ export function QrScannerPanel({
   onClose
 }: QrScannerPanelProps): JSX.Element | null {
   const { t } = useLanguage();
+  const [scannerState, setScannerState] = useState<ScannerState>("idle");
+  const [scannerErrorMessage, setScannerErrorMessage] = useState<string | null>(null);
+  const [retryToken, setRetryToken] = useState<number>(0);
+  const [isRetrying, setIsRetrying] = useState<boolean>(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const frameRef = useRef<HTMLDivElement | null>(null);
+  const translationRef = useRef<ReturnType<typeof useLanguage>["t"]>(t);
+  const controlsRef = useRef<QrScannerReaderControls | null>(null);
   const lastErrorRef = useRef<{ readonly message: string; readonly timestamp: number } | null>(
     null
   );
@@ -83,10 +203,23 @@ export function QrScannerPanel({
     onErrorRef.current = onError;
   }, [onDetected, onError]);
 
+  useEffect((): void => {
+    translationRef.current = t;
+  }, [t]);
+
   const requestClose = useCallback((): void => {
     logScannerEvent("close_requested");
     onClose();
   }, [onClose]);
+
+  const requestRetry = useCallback((): void => {
+    logScannerEvent("retry_requested");
+    setIsRetrying(true);
+    setScannerState("starting");
+    setScannerErrorMessage(null);
+    lastErrorRef.current = null;
+    setRetryToken((value: number): number => value + 1);
+  }, []);
 
   useDialogA11y({
     isOpen: isActive,
@@ -111,104 +244,167 @@ export function QrScannerPanel({
   }, [isActive]);
 
   useEffect(() => {
+    if (isActive) {
+      return;
+    }
+
+    setScannerState("idle");
+    setScannerErrorMessage(null);
+    setIsRetrying(false);
+    lastErrorRef.current = null;
+  }, [isActive]);
+
+  useEffect(() => {
     if (!isActive) {
       return;
     }
 
-    let controls: ReaderControls | null = null;
     let isCancelled = false;
-    let isStreamReady = false;
-    let startupTimeoutId: number | undefined;
     const videoElement = videoRef.current;
+    controlsRef.current = null;
+    const isSessionCancelled = (): boolean => isCancelled;
 
     if (videoElement === null) {
+      const missingVideoMessage = translationRef.current("qrScanner.startFailed");
       logScannerEvent("start_aborted_missing_video_element");
+      setScannerState("error");
+      setScannerErrorMessage(missingVideoMessage);
+      onErrorRef.current(missingVideoMessage);
       return;
     }
 
-    const handleVideoPlaying = (): void => {
-      isStreamReady = true;
-      if (startupTimeoutId !== undefined) {
-        window.clearTimeout(startupTimeoutId);
-        startupTimeoutId = undefined;
-      }
-      logScannerEvent("stream_ready");
-    };
+    setScannerState("starting");
+    setScannerErrorMessage(null);
 
-    videoElement.addEventListener("playing", handleVideoPlaying);
-
-    startupTimeoutId = window.setTimeout((): void => {
-      if (isCancelled || isStreamReady) {
+    const reportScannerError = (message: string): void => {
+      if (isCancelled) {
         return;
       }
 
-      const timeoutMessage = t("qrScanner.startFailed");
-      logScannerEvent("start_timeout", {
-        timeoutMs: SCANNER_START_TIMEOUT_MS
-      });
-      onErrorRef.current(timeoutMessage);
-    }, SCANNER_START_TIMEOUT_MS);
+      setScannerState("error");
+      setScannerErrorMessage(message);
+      onErrorRef.current(message);
+    };
 
     const startScanner = async (): Promise<void> => {
       try {
         logScannerEvent("start_attempt");
         const module = await import("@zxing/browser");
-        const reader = new module.BrowserQRCodeReader();
-
         if (isCancelled) {
           return;
         }
 
-        controls = (await reader.decodeFromVideoDevice(
-          undefined,
+        const reader = new module.BrowserQRCodeReader();
+        const scannerStartResult = await startQrScannerWithFallback<QrScanResultLike>({
+          reader,
           videoElement,
-          (result, error): void => {
+          attempts: getDefaultQrScannerStartAttempts(),
+          onDecode: (result, error): void => {
             if (isCancelled) {
               return;
             }
 
             if (result !== undefined) {
               const payload: string = result.getText();
+              if (payload.trim().length === 0) {
+                return;
+              }
+
               logScannerEvent("scan_success", {
                 payloadLength: payload.length
               });
-              controls?.stop();
+              stopScannerControls(controlsRef.current);
               cleanupQrScannerVideo(videoElement);
+              setScannerState("idle");
+              setScannerErrorMessage(null);
+              setIsRetrying(false);
               onDetectedRef.current(payload);
               return;
             }
 
-            if (error !== undefined) {
-              const message = mapScannerErrorMessage(error, t);
-              if (message.length > 0 && !message.includes("NotFoundException")) {
-                const now: number = Date.now();
-                const previousError = lastErrorRef.current;
-                const isThrottled =
-                  previousError !== null &&
-                  previousError.message === message &&
-                  now - previousError.timestamp < SCANNER_ERROR_THROTTLE_MS;
-                if (isThrottled) {
-                  return;
-                }
-
-                lastErrorRef.current = {
-                  message,
-                  timestamp: now
-                };
-                logScannerEvent("scan_error", {
-                  message
-                });
-                onErrorRef.current(message);
-              }
+            if (error === undefined) {
+              return;
             }
+
+            const signal = toErrorSignal(error);
+            if (isNotFoundDecodeSignal(signal)) {
+              return;
+            }
+
+            const message = mapScannerErrorMessage(error, translationRef.current);
+            if (message.trim().length === 0) {
+              return;
+            }
+
+            if (isFatalScannerSignal(signal)) {
+              logScannerEvent("scan_fatal_error", {
+                message
+              });
+              reportScannerError(message);
+              stopScannerControls(controlsRef.current);
+              cleanupQrScannerVideo(videoElement);
+              setIsRetrying(false);
+              return;
+            }
+
+            const now: number = Date.now();
+            const previousError = lastErrorRef.current;
+            const isThrottled =
+              previousError !== null &&
+              previousError.message === message &&
+              now - previousError.timestamp < SCANNER_ERROR_THROTTLE_MS;
+            if (isThrottled) {
+              return;
+            }
+
+            lastErrorRef.current = {
+              message,
+              timestamp: now
+            };
+            logScannerEvent("scan_error", {
+              message
+            });
+            onErrorRef.current(message);
+          },
+          onAttemptFailure: ({ attempt, error }): void => {
+            logScannerEvent("start_attempt_failed", {
+              attempt: attempt.name,
+              message: mapScannerErrorMessage(error, translationRef.current)
+            });
           }
-        )) as ReaderControls;
+        });
+
+        if (isSessionCancelled()) {
+          scannerStartResult.controls.stop();
+          cleanupQrScannerVideo(videoElement);
+          return;
+        }
+
+        controlsRef.current = scannerStartResult.controls;
+        logScannerEvent("start_attempt_succeeded", {
+          attempt: scannerStartResult.attempt.name
+        });
+
+        await waitForVideoReady(videoElement, SCANNER_START_TIMEOUT_MS);
+        if (isSessionCancelled()) {
+          return;
+        }
+
+        setScannerState("ready");
+        setScannerErrorMessage(null);
+        setIsRetrying(false);
+        logScannerEvent("stream_ready", {
+          timeoutMs: SCANNER_START_TIMEOUT_MS
+        });
       } catch (error) {
-        const mappedMessage = mapScannerErrorMessage(error, t);
+        const mappedMessage = mapScannerErrorMessage(error, translationRef.current);
         logScannerEvent("start_failed", {
           message: mappedMessage
         });
-        onErrorRef.current(mappedMessage);
+        stopScannerControls(controlsRef.current);
+        cleanupQrScannerVideo(videoElement);
+        setIsRetrying(false);
+        reportScannerError(mappedMessage);
       }
     };
 
@@ -216,15 +412,12 @@ export function QrScannerPanel({
 
     return (): void => {
       isCancelled = true;
-      if (startupTimeoutId !== undefined) {
-        window.clearTimeout(startupTimeoutId);
-      }
-      videoElement.removeEventListener("playing", handleVideoPlaying);
       logScannerEvent("cleanup");
-      controls?.stop();
+      stopScannerControls(controlsRef.current);
+      controlsRef.current = null;
       cleanupQrScannerVideo(videoElement);
     };
-  }, [isActive, t]);
+  }, [isActive, retryToken]);
 
   if (!isActive) {
     return null;
@@ -263,7 +456,36 @@ export function QrScannerPanel({
         <p id="qr-scanner-note" className="qr-scanner-note">
           {t("qrScanner.permissionHint")}
         </p>
-        <video className="qr-scanner-video" ref={videoRef} muted playsInline />
+        <div className="qr-scanner-viewport" data-state={scannerState}>
+          <video className="qr-scanner-video" ref={videoRef} muted playsInline autoPlay />
+          {scannerState === "starting" ? (
+            <div className="qr-scanner-status qr-scanner-status--starting" role="status">
+              <span className="qr-scanner-spinner" aria-hidden="true" />
+              <p className="qr-scanner-status-title">
+                {isRetrying ? t("qrScanner.retrying") : t("qrScanner.starting")}
+              </p>
+            </div>
+          ) : null}
+          {scannerState === "error" ? (
+            <div className="qr-scanner-status qr-scanner-status--error" role="alert">
+              <p className="qr-scanner-status-title">
+                {scannerErrorMessage ?? t("qrScanner.startFailed")}
+              </p>
+              <div className="qr-scanner-status-actions">
+                <button type="button" className="quest-button" onClick={requestRetry}>
+                  {t("qrScanner.retry")}
+                </button>
+                <button
+                  type="button"
+                  className="quest-button quest-button--ghost"
+                  onClick={requestClose}
+                >
+                  {t("qrScanner.close")}
+                </button>
+              </div>
+            </div>
+          ) : null}
+        </div>
       </div>
     </section>,
     document.body
