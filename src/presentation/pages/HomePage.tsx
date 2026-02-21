@@ -10,6 +10,10 @@ import { useNavigate } from "react-router-dom";
 
 import type { RouteOverview } from "@/application/use-cases/list-routes.use-case";
 import {
+  QR_ROUTE_PROFILES,
+  type QrRouteProfile
+} from "@/core/constants/route-profile.constants";
+import {
   type PlayerAliasValidationReason,
   validatePlayerAlias
 } from "@/core/validation/player-alias-policy";
@@ -17,7 +21,7 @@ import { useLanguage } from "@/presentation/app/LanguageContext";
 import { useSound } from "@/presentation/app/SoundContext";
 import { QrScannerPanel } from "@/presentation/components/quest/QrScannerPanel";
 import { useAppServices } from "@/presentation/hooks/useAppServices";
-import { localizeRouteDisplay } from "@/presentation/i18n/localize-route";
+import { localizeRouteDisplay, localizeRouteName } from "@/presentation/i18n/localize-route";
 import {
   DEFAULT_PLAYER_ALIAS,
   PLAYER_ALIAS_STORAGE_KEY
@@ -120,6 +124,7 @@ function HomePage(): JSX.Element {
   const [aliasErrorMessage, setAliasErrorMessage] = useState<string | null>(null);
   const [scannerErrorMessage, setScannerErrorMessage] = useState<string | null>(null);
   const [playerAlias, setPlayerAlias] = useState<string>(getStoredAlias());
+  const [selectedQrProfile, setSelectedQrProfile] = useState<QrRouteProfile>("short");
   const [isScannerVisible, setIsScannerVisible] = useState<boolean>(false);
   const [isPreflightDismissed, setIsPreflightDismissed] = useState<boolean>(
     getStoredPreflightDismissed
@@ -304,7 +309,8 @@ function HomePage(): JSX.Element {
         try {
           const resolvedEntryRoute = await gameUseCases.resolveQrEntryRoute({
             scannedRouteSlug: parsedPayload.routeSlug,
-            locationSlug: parsedPayload.locationSlug
+            locationSlug: parsedPayload.locationSlug,
+            desiredProfile: selectedQrProfile
           });
 
           if (resolvedEntryRoute.routeSlug.length > 0) {
@@ -312,7 +318,7 @@ function HomePage(): JSX.Element {
           }
 
           if (targetRouteSlug !== parsedPayload.routeSlug) {
-            logger.info("QR entry remapped to a shorter compatible route.", {
+            logger.info("QR entry remapped to a compatible route profile.", {
               scannedRouteSlug: parsedPayload.routeSlug,
               targetRouteSlug,
               locationSlug: parsedPayload.locationSlug,
@@ -331,15 +337,18 @@ function HomePage(): JSX.Element {
         setAliasErrorMessage(null);
         setScannerErrorMessage(null);
         setStoredAlias(aliasValidation.normalizedAlias);
+        const searchParams = new URLSearchParams();
+        searchParams.set("entry", "qr");
+        searchParams.set("profile", selectedQrProfile);
         await navigate({
           pathname: toRouteLocationPath(targetRouteSlug, parsedPayload.locationSlug),
-          search: "?entry=qr"
+          search: `?${searchParams.toString()}`
         });
       };
 
       void openFromQr();
     },
-    [gameUseCases, logger, navigate, play, playerAlias, t]
+    [gameUseCases, logger, navigate, play, playerAlias, selectedQrProfile, t]
   );
 
   const requestGpsPermission = useCallback(async (): Promise<void> => {
@@ -544,6 +553,26 @@ function HomePage(): JSX.Element {
 
       <section className="quest-panel">
         <h2 className="quest-panel-title">{t("home.qrStartTitle")}</h2>
+        <p className="quest-field-label">{t("home.qrProfileLabel")}</p>
+        <div className="quest-navigation-toggle" role="radiogroup" aria-label={t("home.qrProfileLabel")}>
+          {QR_ROUTE_PROFILES.map((profile: QrRouteProfile): JSX.Element => (
+            <button
+              key={profile}
+              className={`theme-switcher-button ${
+                selectedQrProfile === profile ? "theme-switcher-button--active" : ""
+              }`}
+              type="button"
+              role="radio"
+              aria-checked={selectedQrProfile === profile}
+              onClick={(): void => {
+                play("tap");
+                setSelectedQrProfile(profile);
+              }}
+            >
+              {localizeRouteName(profile, profile, t)}
+            </button>
+          ))}
+        </div>
         <div className="quest-actions">
           <button
             className="quest-button quest-button--ghost"

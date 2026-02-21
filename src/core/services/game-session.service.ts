@@ -11,6 +11,7 @@ export interface GameSessionInput {
   readonly run: Run;
   readonly locations: readonly Location[];
   readonly checkins: readonly Checkin[];
+  readonly targetLocationCount?: number | null;
 }
 
 export interface CheckinEligibilityInput {
@@ -18,6 +19,7 @@ export interface CheckinEligibilityInput {
   readonly targetLocation: Location;
   readonly locations: readonly Location[];
   readonly checkins: readonly Checkin[];
+  readonly targetLocationCount?: number | null;
 }
 
 export class GameSessionService {
@@ -28,13 +30,14 @@ export class GameSessionService {
   public buildSnapshot(input: GameSessionInput): GameSessionSnapshot {
     const orderedActiveLocations: readonly Location[] =
       this.getOrderedActiveLocations(input.locations);
-    const startSequenceIndex: number = this.resolveStartSequenceIndex(
-      input.run.startLocationId,
-      orderedActiveLocations
-    );
-    const routeTrackLocations: readonly Location[] = orderedActiveLocations.filter(
-      (location: Location): boolean => location.sequenceNumber >= startSequenceIndex
-    );
+    const routeTrackLocations: readonly Location[] = this.buildRouteTrackLocations({
+      run: input.run,
+      locations: orderedActiveLocations,
+      targetLocationCount: input.targetLocationCount ?? null
+    });
+    const startSequenceIndex: number =
+      routeTrackLocations[0]?.sequenceNumber ??
+      this.resolveStartSequenceIndex(input.run.startLocationId, orderedActiveLocations);
     const completedLocationIdSet: Set<LocationId> = this.getCompletedLocationIdSet(
       input.run.id,
       input.checkins
@@ -42,12 +45,18 @@ export class GameSessionService {
     const completedLocationIds: readonly LocationId[] = routeTrackLocations
       .filter((location: Location): boolean => completedLocationIdSet.has(location.id))
       .map((location: Location): LocationId => location.id);
-    const nextLocation: Location | null =
+    const nextLocationByCurrentSequence: Location | null =
       routeTrackLocations.find(
         (location: Location): boolean =>
-          location.sequenceNumber >= input.run.currentSequenceIndex &&
+          location.sequenceNumber === input.run.currentSequenceIndex &&
           !completedLocationIdSet.has(location.id)
       ) ?? null;
+    const nextLocation: Location | null =
+      nextLocationByCurrentSequence ??
+      routeTrackLocations.find(
+        (location: Location): boolean => !completedLocationIdSet.has(location.id)
+      ) ??
+      null;
 
     const progress = this.progressTrackingService.calculate(
       routeTrackLocations.length,
@@ -93,6 +102,21 @@ export class GameSessionService {
       };
     }
 
+    const routeTrackLocations: readonly Location[] = this.buildRouteTrackLocations({
+      run: input.run,
+      locations: input.locations,
+      targetLocationCount: input.targetLocationCount ?? null
+    });
+    const isInRouteTrack: boolean = routeTrackLocations.some(
+      (location: Location): boolean => location.id === input.targetLocation.id
+    );
+    if (!isInRouteTrack) {
+      return {
+        isAllowed: false,
+        reason: "out_of_order"
+      };
+    }
+
     const completedLocationIdSet: Set<LocationId> = this.getCompletedLocationIdSet(
       input.run.id,
       input.checkins
@@ -126,6 +150,48 @@ export class GameSessionService {
       );
   }
 
+  public buildRouteTrackLocations(input: {
+    readonly run: Run;
+    readonly locations: readonly Location[];
+    readonly targetLocationCount?: number | null;
+  }): readonly Location[] {
+    const orderedActiveLocations: readonly Location[] =
+      this.getOrderedActiveLocations(input.locations);
+    const startSequenceIndex: number = this.resolveStartSequenceIndex(
+      input.run.startLocationId,
+      orderedActiveLocations
+    );
+
+    if (orderedActiveLocations.length === 0) {
+      return [];
+    }
+
+    if (
+      input.targetLocationCount === null ||
+      input.targetLocationCount === undefined ||
+      input.targetLocationCount <= 0
+    ) {
+      return orderedActiveLocations.filter(
+        (location: Location): boolean => location.sequenceNumber >= startSequenceIndex
+      );
+    }
+
+    const startIndex: number = this.resolveStartLocationIndex(
+      startSequenceIndex,
+      orderedActiveLocations
+    );
+    const wrappedTrack: readonly Location[] = [
+      ...orderedActiveLocations.slice(startIndex),
+      ...orderedActiveLocations.slice(0, startIndex)
+    ];
+    const limitedCount: number = Math.min(
+      input.targetLocationCount,
+      wrappedTrack.length
+    );
+
+    return wrappedTrack.slice(0, limitedCount);
+  }
+
   private getCompletedLocationIdSet(
     runId: Run["id"],
     checkins: readonly Checkin[]
@@ -150,5 +216,16 @@ export class GameSessionService {
         (location: Location): boolean => location.id === startLocationId
       )?.sequenceNumber ?? orderedActiveLocations[0]?.sequenceNumber ?? 1
     );
+  }
+
+  private resolveStartLocationIndex(
+    startSequenceIndex: number,
+    orderedActiveLocations: readonly Location[]
+  ): number {
+    const startIndex: number = orderedActiveLocations.findIndex(
+      (location: Location): boolean => location.sequenceNumber === startSequenceIndex
+    );
+
+    return startIndex >= 0 ? startIndex : 0;
   }
 }

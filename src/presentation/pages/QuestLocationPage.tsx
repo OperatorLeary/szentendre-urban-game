@@ -10,6 +10,10 @@ import {
 } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
+import {
+  type QrRouteProfile,
+  parseQrRouteProfile
+} from "@/core/constants/route-profile.constants";
 import type { GameSessionSnapshot } from "@/core/models/game-session.model";
 import type { Location } from "@/core/entities/location.entity";
 import { useLanguage } from "@/presentation/app/LanguageContext";
@@ -300,6 +304,16 @@ function resolveInitialOnlineState(): boolean {
   return navigator.onLine;
 }
 
+function toProfileSearch(profile: QrRouteProfile | null): string {
+  if (profile === null) {
+    return "";
+  }
+
+  const searchParams = new URLSearchParams();
+  searchParams.set("profile", profile);
+  return `?${searchParams.toString()}`;
+}
+
 function triggerHapticFeedback(pattern: number | number[]): void {
   if (typeof navigator === "undefined" || typeof navigator.vibrate !== "function") {
     return;
@@ -332,16 +346,23 @@ function QuestLocationPage(): JSX.Element {
   const navigationModeButtonRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const runControl = useRunControl();
 
+  const routeProfile = useMemo((): QrRouteProfile | null => {
+    const params = new URLSearchParams(location.search);
+    return parseQrRouteProfile(params.get("profile"));
+  }, [location.search]);
+
   const preferRequestedStart = useMemo((): boolean => {
     const params = new URLSearchParams(location.search);
     return params.get("entry") === "qr";
   }, [location.search]);
+  const profileSearch = useMemo((): string => toProfileSearch(routeProfile), [routeProfile]);
 
   const runSession = useRunSession({
     routeSlug: routeSelection.routeSlug,
     locationSlug: routeSelection.locationSlug,
     enabled: routeSelection.isValid,
-    preferRequestedStart
+    preferRequestedStart,
+    routeProfile
   });
 
   useEffect((): void => {
@@ -372,11 +393,40 @@ function QuestLocationPage(): JSX.Element {
       typeof activeRouteSlug === "string" &&
       typeof activeNextLocationSlug === "string"
     ) {
-      void navigate(toRouteLocationPath(activeRouteSlug, activeNextLocationSlug), {
-        replace: true
-      });
+      void navigate(
+        {
+          pathname: toRouteLocationPath(activeRouteSlug, activeNextLocationSlug),
+          search: profileSearch
+        },
+        {
+          replace: true
+        }
+      );
     }
-  }, [navigate, runSession.errorContext]);
+  }, [navigate, profileSearch, runSession.errorContext]);
+
+  useEffect((): void => {
+    if (!preferRequestedStart || runSession.data === null) {
+      return;
+    }
+
+    void navigate(
+      {
+        pathname: toRouteLocationPath(routeSelection.routeSlug, routeSelection.locationSlug),
+        search: profileSearch
+      },
+      {
+        replace: true
+      }
+    );
+  }, [
+    navigate,
+    preferRequestedStart,
+    profileSearch,
+    routeSelection.locationSlug,
+    routeSelection.routeSlug,
+    runSession.data
+  ]);
 
   useEffect((): (() => void) => {
     return (): void => {
@@ -470,6 +520,7 @@ function QuestLocationPage(): JSX.Element {
   const locationValidation = useLocationValidation({
     runId: runSession.data?.run.id ?? "",
     routeSlug: runSession.data?.route.slug ?? routeSelection.routeSlug,
+    routeProfile,
     locationId: runSession.data?.requestedLocation.id ?? "",
     answerText,
     onSessionUpdated: (result): void => {
@@ -500,11 +551,17 @@ function QuestLocationPage(): JSX.Element {
       nextLocationSlug !== routeSelection.locationSlug &&
       !runSession.data.session.isCompleted
     ) {
-      void navigate(toRouteLocationPath(runSession.data.route.slug, nextLocationSlug), {
-        replace: true
-      });
+      void navigate(
+        {
+          pathname: toRouteLocationPath(runSession.data.route.slug, nextLocationSlug),
+          search: profileSearch
+        },
+        {
+          replace: true
+        }
+      );
     }
-  }, [navigate, routeSelection.locationSlug, runSession.data]);
+  }, [navigate, profileSearch, routeSelection.locationSlug, runSession.data]);
 
   const activeLocation = runSession.data?.requestedLocation ?? null;
 
@@ -555,10 +612,13 @@ function QuestLocationPage(): JSX.Element {
       play("success");
 
       if (runSession.data !== null) {
-        void navigate(toRouteLocationPath(runSession.data.route.slug, nextLocationSlug));
+        void navigate({
+          pathname: toRouteLocationPath(runSession.data.route.slug, nextLocationSlug),
+          search: profileSearch
+        });
       }
     },
-    [navigate, play, runSession.data, t, triggerCelebration]
+    [navigate, play, profileSearch, runSession.data, t, triggerCelebration]
   );
 
   const performQrValidation = useCallback(
@@ -759,7 +819,7 @@ function QuestLocationPage(): JSX.Element {
     runSession.data.locations
   );
   const localizedRouteTitle: string = localizeRouteName(
-    runSession.data.route.slug,
+    routeProfile ?? runSession.data.route.slug,
     runSession.data.route.name,
     t
   );
@@ -786,7 +846,7 @@ function QuestLocationPage(): JSX.Element {
   const progressPercentage: number = runSession.data.session.completionPercentage;
   const hasAnswer: boolean = answerText.trim().length > 0;
   const nextLocationName: string | null = runSession.data.session.nextLocation?.name ?? null;
-  const summaryRouteSlug: string = runSession.data.route.slug;
+  const summaryRouteSlug: string = routeProfile ?? runSession.data.route.slug;
   const isRunCompleted: boolean = runSession.data.session.isCompleted;
   const summaryCompletedAt: Date = completionTimestamp ?? new Date();
   const summaryDurationLabel: string = formatDuration(

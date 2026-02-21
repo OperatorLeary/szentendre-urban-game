@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import type { EnsureRunSessionResponse } from "@/application/use-cases/ensure-run-session.use-case";
+import type { QrRouteProfile } from "@/core/constants/route-profile.constants";
 import { APP_ERROR_CODES } from "@/core/errors/error-codes";
 import { validatePlayerAlias } from "@/core/validation/player-alias-policy";
 import { AppError } from "@/core/errors/app-error";
@@ -17,6 +18,7 @@ interface UseRunSessionInput {
   readonly locationSlug: string;
   readonly enabled: boolean;
   readonly preferRequestedStart?: boolean;
+  readonly routeProfile?: QrRouteProfile | null;
 }
 
 interface UseRunSessionState {
@@ -169,7 +171,8 @@ export function useRunSession(input: UseRunSessionInput): UseRunSessionResult {
           routeSlug: input.routeSlug,
           locationSlug: input.locationSlug,
           playerAlias: getStoredPlayerAlias(),
-          preferRequestedStart: input.preferRequestedStart ?? false
+          preferRequestedStart: input.preferRequestedStart ?? false,
+          routeProfile: input.routeProfile ?? null
         });
 
       setState({
@@ -201,6 +204,7 @@ export function useRunSession(input: UseRunSessionInput): UseRunSessionResult {
     input.enabled,
     input.locationSlug,
     input.preferRequestedStart,
+    input.routeProfile,
     input.routeSlug,
     t
   ]);

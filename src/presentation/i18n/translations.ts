@@ -44,6 +44,7 @@ const hu = {
   "home.playerAliasBlockedContent":
     "Válassz másik játékosnevet. Kérjük, kerüld a sértő, politikai vagy jogsértő tartalmat.",
   "home.qrStartTitle": "Indítás QR-kódról",
+  "home.qrProfileLabel": "QR-indítás hossza",
   "home.scanQrWithCamera": "QR-szkennelés kamerával",
   "home.hideCameraScanner": "Kamera szkennelő elrejtése",
   "home.qrPayloadInvalid":
@@ -303,6 +304,7 @@ const en: Record<TranslationKey, string> = {
   "home.playerAliasBlockedContent":
     "Choose a different alias. Please avoid offensive, political, or illegal content.",
   "home.qrStartTitle": "Start from QR",
+  "home.qrProfileLabel": "QR start length",
   "home.scanQrWithCamera": "Scan QR with camera",
   "home.hideCameraScanner": "Hide camera scanner",
   "home.qrPayloadInvalid":

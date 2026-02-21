@@ -8,6 +8,11 @@ import type { UseCase } from "@/application/use-cases/use-case.contract";
 import type { Checkin } from "@/core/entities/checkin.entity";
 import type { Location } from "@/core/entities/location.entity";
 import type { Route } from "@/core/entities/route.entity";
+import {
+  type QrRouteProfile,
+  parseQrRouteProfile,
+  resolveQrRouteProfileTargetCount
+} from "@/core/constants/route-profile.constants";
 import { Run } from "@/core/entities/run.entity";
 import { ApplicationError } from "@/core/errors/app-error";
 import { APP_ERROR_CODES } from "@/core/errors/error-codes";
@@ -21,6 +26,7 @@ export interface EnsureRunSessionRequest {
   readonly locationSlug: string;
   readonly playerAlias: string;
   readonly preferRequestedStart?: boolean;
+  readonly routeProfile?: QrRouteProfile | null;
 }
 
 export interface EnsureRunSessionResponse {
@@ -76,6 +82,11 @@ export class EnsureRunSessionUseCase
   public async execute(
     request: EnsureRunSessionRequest
   ): Promise<EnsureRunSessionResponse> {
+    const normalizedRouteProfile: QrRouteProfile | null = parseQrRouteProfile(
+      request.routeProfile ?? null
+    );
+    const targetLocationCount: number | null =
+      resolveQrRouteProfileTargetCount(normalizedRouteProfile);
     const route: Route | null = await this.dependencies.routeRepository.findActiveBySlug(
       request.routeSlug
     );
@@ -179,19 +190,26 @@ export class EnsureRunSessionUseCase
       this.dependencies.locationRepository.listByRoute(route.id),
       this.dependencies.checkinRepository.listByRunId(run.id)
     ]);
+    const routeTrackLocations: readonly Location[] =
+      this.dependencies.gameSessionService.buildRouteTrackLocations({
+        run,
+        locations,
+        targetLocationCount
+      });
 
     const session: GameSessionSnapshot = this.dependencies.gameSessionService.buildSnapshot(
       {
         run,
         locations,
-        checkins
+        checkins,
+        targetLocationCount
       }
     );
 
     return {
       run,
       route,
-      locations,
+      locations: routeTrackLocations,
       requestedLocation,
       session
     };

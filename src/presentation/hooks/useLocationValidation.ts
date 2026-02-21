@@ -6,6 +6,7 @@ import type {
 import type {
   ValidateQrCheckinResponse
 } from "@/application/use-cases/validate-qr-checkin.use-case";
+import type { QrRouteProfile } from "@/core/constants/route-profile.constants";
 import {
   toCheckinId,
   toLocationId,
@@ -27,6 +28,7 @@ function generateIdentifier(): string {
 interface UseLocationValidationInput {
   readonly runId: string;
   readonly routeSlug: string;
+  readonly routeProfile?: QrRouteProfile | null;
   readonly locationId: string;
   readonly answerText: string;
   readonly onSessionUpdated: (
@@ -54,7 +56,8 @@ export function useLocationValidation(
 ): UseLocationValidationResult {
   const { t } = useLanguage();
   const { gameUseCases } = useAppServices();
-  const { answerText, locationId, onSessionUpdated, routeSlug, runId } = input;
+  const { answerText, locationId, onSessionUpdated, routeProfile, routeSlug, runId } =
+    input;
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [lastResult, setLastResult] = useState<
@@ -74,6 +77,7 @@ export function useLocationValidation(
             checkinId: toCheckinId(generateIdentifier()),
             runId: toRunId(runId),
             locationId: toLocationId(locationId),
+            routeProfile: routeProfile ?? null,
             answerText,
             currentPosition: new GeoPoint({
               latitude: geolocation.position.latitude,
@@ -94,7 +98,7 @@ export function useLocationValidation(
         setIsSubmitting(false);
       }
     },
-    [answerText, gameUseCases, locationId, onSessionUpdated, runId, t]
+    [answerText, gameUseCases, locationId, onSessionUpdated, routeProfile, runId, t]
   );
 
   const validateWithQr = useCallback(
@@ -108,6 +112,7 @@ export function useLocationValidation(
             checkinId: toCheckinId(generateIdentifier()),
             runId: toRunId(runId),
             locationId: toLocationId(locationId),
+            routeProfile: routeProfile ?? null,
             expectedRouteSlug: routeSlug,
             answerText,
             scannedPayload
@@ -125,7 +130,16 @@ export function useLocationValidation(
         setIsSubmitting(false);
       }
     },
-    [answerText, gameUseCases, locationId, onSessionUpdated, routeSlug, runId, t]
+    [
+      answerText,
+      gameUseCases,
+      locationId,
+      onSessionUpdated,
+      routeProfile,
+      routeSlug,
+      runId,
+      t
+    ]
   );
 
   return {

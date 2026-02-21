@@ -6,6 +6,11 @@ import { CheckinContextLoaderService } from "@/application/services/checkin-cont
 import type { UseCase } from "@/application/use-cases/use-case.contract";
 import { Checkin } from "@/core/entities/checkin.entity";
 import type { Run } from "@/core/entities/run.entity";
+import {
+  type QrRouteProfile,
+  parseQrRouteProfile,
+  resolveQrRouteProfileTargetCount
+} from "@/core/constants/route-profile.constants";
 import { CheckinMethod } from "@/core/enums/checkin-method.enum";
 import { RunStatus } from "@/core/enums/run-status.enum";
 import type { CheckinEligibilityReason } from "@/core/models/checkin-eligibility.model";
@@ -31,6 +36,7 @@ export interface ValidateQrCheckinRequest {
   readonly checkinId: CheckinId;
   readonly runId: RunId;
   readonly locationId: LocationId;
+  readonly routeProfile?: QrRouteProfile | null;
   readonly expectedRouteSlug: string;
   readonly answerText: string;
   readonly scannedPayload: string;
@@ -70,6 +76,11 @@ export class ValidateQrCheckinUseCase
   public async execute(
     request: ValidateQrCheckinRequest
   ): Promise<ValidateQrCheckinResponse> {
+    const normalizedRouteProfile: QrRouteProfile | null = parseQrRouteProfile(
+      request.routeProfile ?? null
+    );
+    const targetLocationCount: number | null =
+      resolveQrRouteProfileTargetCount(normalizedRouteProfile);
     const { run, location, locations, checkins } =
       await this.dependencies.checkinContextLoader.load({
         runId: request.runId,
@@ -81,7 +92,8 @@ export class ValidateQrCheckinUseCase
         run,
         targetLocation: location,
         locations,
-        checkins
+        checkins,
+        targetLocationCount
       }
     );
     if (!eligibility.isAllowed) {
@@ -136,14 +148,16 @@ export class ValidateQrCheckinUseCase
       this.dependencies.gameSessionService.resolveNextSequenceIndex({
         run,
         locations,
-        checkins: checkinsAfterWrite
+        checkins: checkinsAfterWrite,
+        targetLocationCount
       });
     let runAfterCheckin: Run = run.withCurrentSequenceIndex(nextSequenceIndex);
     let session: GameSessionSnapshot = this.dependencies.gameSessionService.buildSnapshot(
       {
         run: runAfterCheckin,
         locations,
-        checkins: checkinsAfterWrite
+        checkins: checkinsAfterWrite,
+        targetLocationCount
       }
     );
 
@@ -155,7 +169,8 @@ export class ValidateQrCheckinUseCase
     session = this.dependencies.gameSessionService.buildSnapshot({
       run: runAfterCheckin,
       locations,
-      checkins: checkinsAfterWrite
+      checkins: checkinsAfterWrite,
+      targetLocationCount
     });
 
     this.dependencies.logger.info("QR check-in accepted.", {

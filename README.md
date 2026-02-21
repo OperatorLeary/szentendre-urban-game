@@ -51,3 +51,7 @@ npm run build
 - Add all required `VITE_*` variables in Production and Preview
 
 See `docs/deployment/cloudflare-pages.md` for details.
+
+## Project Context and Handoff
+- High-level project brief and decision log anchor: `docs/project-context.md`
+- Chronological implementation notes: `progress.md`
