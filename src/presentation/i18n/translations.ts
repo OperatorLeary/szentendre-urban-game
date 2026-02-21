@@ -30,6 +30,7 @@ const hu = {
   "home.route.medium.description": "Kiegyensúlyozott útvonal a főbb látnivalókon át.",
   "home.route.long.name": "Hosszú útvonal",
   "home.route.long.description": "Teljes városi kaland az összes ellenőrzőponttal.",
+  "home.routeMeta": "{stations} állomás • kb. {minutes} perc",
   "home.startRoute": "Útvonal indítása",
   "home.routeMissingFirstLocation":
     "A(z) \"{routeName}\" útvonalhoz nincs aktív kezdő állomás beállítva.",
@@ -108,6 +109,16 @@ const hu = {
   "admin.hidePreview": "Előnézet bezárása",
   "admin.previewTitle": "Állomás nézet előnézet",
   "admin.dirtyTag": "módosítva",
+  "admin.showDirtyOnly": "Csak módosítottak",
+  "admin.showAllStations": "Összes állomás",
+  "admin.publishDirty": "Összes módosított publikálása",
+  "admin.publishingDirty": "Publikálás folyamatban...",
+  "admin.publishDirtyConfirm": "Biztosan publikálod az összes módosított állomást?",
+  "admin.noDirtyStationsVisible": "Nincs megjeleníthető módosított állomás.",
+  "admin.noDirtyStationsToPublish": "Nincs publikálható módosított állomás.",
+  "admin.savedDirtySummary": "Publikálva: {count} módosított állomás.",
+  "admin.confirmCancel": "Mégse",
+  "admin.confirmProceed": "Rendben",
   "quest.reason.outside_radius":
     "A megengedett sugáron kívül vagy. Próbáld újra GPS-szel vagy használj QR-felülbírálást.",
   "quest.reason.incorrect_answer": "A válasz nem megfelelő. Próbáld újra.",
@@ -170,6 +181,9 @@ const hu = {
   "quest.hideQrScanner": "QR-szkennelő elrejtése",
   "quest.scanQrOverride": "QR-felülbírálás szkennelés",
   "quest.currentDistance": "Jelenlegi távolság az állomástól",
+  "quest.gpsSnapshotAge": "Utolsó GPS pozíció: {seconds} mp-cel ezelőtt.",
+  "quest.gpsSnapshotAgeStale":
+    "Régebbi GPS pozíciót használsz ({seconds} mp-cel ezelőtt). Frissíts helyzetet újra.",
   "quest.timelineTitle": "Állomásfolyam",
   "quest.timelinePrevious": "Előző",
   "quest.timelineCurrent": "Aktuális",
@@ -224,6 +238,14 @@ const hu = {
   "install.button": "Alkalmazás telepítése",
   "routeFallback.loading": "Képernyő betöltése...",
   "qrScanner.startFailed": "Nem sikerült elindítani a QR-szkennert.",
+  "qrScanner.permissionHint":
+    "Ha nem indul a kamera, engedélyezd a kamera-hozzáférést a böngészőben.",
+  "qrScanner.permissionDenied":
+    "A kamera-hozzáférés le van tiltva. Engedélyezd, majd próbáld újra.",
+  "qrScanner.noCamera":
+    "Nem található használható kamera ezen az eszközön.",
+  "qrScanner.insecureContext":
+    "A kamera csak biztonságos (https) oldalon érhető el.",
   "qrScanner.overlayHint": "Irányítsd a kamerát a QR-kódra.",
   "qrScanner.close": "Bezárás",
   "map.you": "Te",
@@ -263,6 +285,7 @@ const en: Record<TranslationKey, string> = {
   "home.route.medium.description": "Balanced route across key landmarks.",
   "home.route.long.name": "Long Route",
   "home.route.long.description": "Full city quest route with all checkpoints.",
+  "home.routeMeta": "{stations} stations • about {minutes} min",
   "home.startRoute": "Start route",
   "home.routeMissingFirstLocation":
     "Route \"{routeName}\" has no active starting station configured.",
@@ -341,6 +364,16 @@ const en: Record<TranslationKey, string> = {
   "admin.hidePreview": "Hide preview",
   "admin.previewTitle": "Station preview",
   "admin.dirtyTag": "edited",
+  "admin.showDirtyOnly": "Dirty only",
+  "admin.showAllStations": "Show all stations",
+  "admin.publishDirty": "Publish all dirty",
+  "admin.publishingDirty": "Publishing...",
+  "admin.publishDirtyConfirm": "Publish all dirty stations now?",
+  "admin.noDirtyStationsVisible": "No dirty stations to show right now.",
+  "admin.noDirtyStationsToPublish": "There are no dirty stations to publish.",
+  "admin.savedDirtySummary": "Published dirty stations: {count}.",
+  "admin.confirmCancel": "Cancel",
+  "admin.confirmProceed": "Proceed",
   "quest.reason.outside_radius":
     "You are outside the station radius. Retry GPS or use QR override.",
   "quest.reason.incorrect_answer": "Answer is incorrect. Please try again.",
@@ -402,6 +435,9 @@ const en: Record<TranslationKey, string> = {
   "quest.hideQrScanner": "Hide QR scanner",
   "quest.scanQrOverride": "Scan QR override",
   "quest.currentDistance": "Current distance to station",
+  "quest.gpsSnapshotAge": "Last GPS fix: {seconds}s ago.",
+  "quest.gpsSnapshotAgeStale":
+    "Using an older GPS fix ({seconds}s ago). Refresh position for better accuracy.",
   "quest.timelineTitle": "Station flow",
   "quest.timelinePrevious": "Previous",
   "quest.timelineCurrent": "Current",
@@ -456,6 +492,14 @@ const en: Record<TranslationKey, string> = {
   "install.button": "Install App",
   "routeFallback.loading": "Loading screen...",
   "qrScanner.startFailed": "Unable to start QR scanner.",
+  "qrScanner.permissionHint":
+    "If camera does not start, allow camera access in your browser settings.",
+  "qrScanner.permissionDenied":
+    "Camera access is blocked. Allow permission and try again.",
+  "qrScanner.noCamera":
+    "No usable camera was found on this device.",
+  "qrScanner.insecureContext":
+    "Camera access requires a secure (https) page.",
   "qrScanner.overlayHint": "Point your camera at the QR code.",
   "qrScanner.close": "Close",
   "map.you": "You",

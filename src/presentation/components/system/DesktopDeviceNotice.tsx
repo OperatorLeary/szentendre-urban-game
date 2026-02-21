@@ -1,7 +1,8 @@
-import { useEffect, useState, type JSX } from "react";
+import { useEffect, useRef, useState, type JSX } from "react";
 import { createPortal } from "react-dom";
 
 import { useLanguage } from "@/presentation/app/LanguageContext";
+import { useDialogA11y } from "@/presentation/hooks/useDialogA11y";
 
 const DESKTOP_NOTICE_DISMISSED_KEY = "szentendre-city-quest-desktop-notice-dismissed";
 
@@ -53,6 +54,7 @@ function shouldShowNotice(): boolean {
 export function DesktopDeviceNotice(props: DesktopDeviceNoticeProps): JSX.Element | null {
   const { t } = useLanguage();
   const [isVisible, setIsVisible] = useState<boolean>(false);
+  const sheetRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (props.isSuppressed === true || typeof window === "undefined") {
@@ -83,6 +85,12 @@ export function DesktopDeviceNotice(props: DesktopDeviceNoticeProps): JSX.Elemen
     setIsVisible(false);
   };
 
+  useDialogA11y({
+    isOpen: isVisible,
+    containerRef: sheetRef,
+    onRequestClose: dismissNotice
+  });
+
   if (!isVisible || typeof document === "undefined") {
     return null;
   }
@@ -93,8 +101,14 @@ export function DesktopDeviceNotice(props: DesktopDeviceNoticeProps): JSX.Elemen
       role="dialog"
       aria-modal="true"
       aria-labelledby="desktop-device-notice-title"
+      aria-describedby="desktop-device-notice-copy"
+      onMouseDown={(event): void => {
+        if (event.target === event.currentTarget) {
+          dismissNotice();
+        }
+      }}
     >
-      <div className="desktop-device-notice-sheet">
+      <div className="desktop-device-notice-sheet" ref={sheetRef} tabIndex={-1}>
         <button
           type="button"
           className="desktop-device-notice-close"
@@ -106,7 +120,9 @@ export function DesktopDeviceNotice(props: DesktopDeviceNoticeProps): JSX.Elemen
         <h2 id="desktop-device-notice-title" className="desktop-device-notice-title">
           {t("desktopNotice.title")}
         </h2>
-        <p className="desktop-device-notice-copy">{t("desktopNotice.copy")}</p>
+        <p className="desktop-device-notice-copy" id="desktop-device-notice-copy">
+          {t("desktopNotice.copy")}
+        </p>
         <div className="desktop-device-notice-actions">
           <button type="button" className="quest-button" onClick={dismissNotice}>
             {t("desktopNotice.continueHere")}

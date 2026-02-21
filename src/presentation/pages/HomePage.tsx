@@ -116,7 +116,9 @@ function HomePage(): JSX.Element {
   const { gameUseCases, logger } = useAppServices();
   const [routes, setRoutes] = useState<readonly RouteOverview[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [routeErrorMessage, setRouteErrorMessage] = useState<string | null>(null);
+  const [aliasErrorMessage, setAliasErrorMessage] = useState<string | null>(null);
+  const [scannerErrorMessage, setScannerErrorMessage] = useState<string | null>(null);
   const [playerAlias, setPlayerAlias] = useState<string>(getStoredAlias());
   const [isScannerVisible, setIsScannerVisible] = useState<boolean>(false);
   const [isPreflightDismissed, setIsPreflightDismissed] = useState<boolean>(
@@ -173,7 +175,7 @@ function HomePage(): JSX.Element {
 
     const loadRoutes = async (): Promise<void> => {
       setIsLoading(true);
-      setErrorMessage(null);
+      setRouteErrorMessage(null);
 
       try {
         const activeRoutes = await gameUseCases.listRoutes();
@@ -193,7 +195,7 @@ function HomePage(): JSX.Element {
         }
       } catch (error) {
         if (!isCancelled) {
-          setErrorMessage(
+          setRouteErrorMessage(
             error instanceof Error ? error.message : t("home.failedToLoadRoutes")
           );
         }
@@ -211,6 +213,34 @@ function HomePage(): JSX.Element {
     };
   }, [gameUseCases, t]);
 
+  useEffect(() => {
+    if (aliasErrorMessage === null || typeof window === "undefined") {
+      return;
+    }
+
+    const timeoutId = window.setTimeout((): void => {
+      setAliasErrorMessage(null);
+    }, 7_500);
+
+    return (): void => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [aliasErrorMessage]);
+
+  useEffect(() => {
+    if (scannerErrorMessage === null || typeof window === "undefined") {
+      return;
+    }
+
+    const timeoutId = window.setTimeout((): void => {
+      setScannerErrorMessage(null);
+    }, 9_000);
+
+    return (): void => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [scannerErrorMessage]);
+
   const startRoute = (route: RouteOverview): void => {
     const routeStartLocationSlug: string | null = route.firstLocationSlug;
     if (routeStartLocationSlug === null) {
@@ -221,7 +251,7 @@ function HomePage(): JSX.Element {
         route.description ?? t("home.defaultRouteDescription"),
         t
       );
-      setErrorMessage(
+      setRouteErrorMessage(
         t("home.routeMissingFirstLocation", {
           routeName: routeDisplay.name
         })
@@ -233,11 +263,12 @@ function HomePage(): JSX.Element {
       playerAlias.trim().length === 0 ? DEFAULT_PLAYER_ALIAS : playerAlias.trim();
     const aliasValidation = validatePlayerAlias(normalizedAlias);
     if (!aliasValidation.isValid) {
-      setErrorMessage(getAliasValidationMessage(aliasValidation.reason, t));
+      setAliasErrorMessage(getAliasValidationMessage(aliasValidation.reason, t));
       play("error");
       return;
     }
 
+    setAliasErrorMessage(null);
     setStoredAlias(normalizedAlias);
 
     logger.info("Starting route from home page.", {
@@ -255,19 +286,21 @@ function HomePage(): JSX.Element {
         playerAlias.trim().length === 0 ? DEFAULT_PLAYER_ALIAS : playerAlias.trim();
       const aliasValidation = validatePlayerAlias(normalizedAlias);
       if (!aliasValidation.isValid) {
-        setErrorMessage(getAliasValidationMessage(aliasValidation.reason, t));
+        setAliasErrorMessage(getAliasValidationMessage(aliasValidation.reason, t));
         play("error");
         return;
       }
 
       const parsedPayload = parseRouteLocationPayload(payload);
       if (parsedPayload === null) {
-        setErrorMessage(t("home.qrPayloadInvalid"));
+        setScannerErrorMessage(t("home.qrPayloadInvalid"));
         play("error");
         return;
       }
 
       play("tap");
+      setAliasErrorMessage(null);
+      setScannerErrorMessage(null);
       setStoredAlias(aliasValidation.normalizedAlias);
       void navigate({
         pathname: toRouteLocationPath(parsedPayload.routeSlug, parsedPayload.locationSlug),
@@ -418,6 +451,7 @@ function HomePage(): JSX.Element {
             value={playerAlias}
             onChange={(event: ChangeEvent<HTMLInputElement>): void => {
               setPlayerAlias(event.target.value);
+              setAliasErrorMessage(null);
             }}
             onBlur={(): void => {
               setStoredAlias(playerAlias);
@@ -426,14 +460,19 @@ function HomePage(): JSX.Element {
             maxLength={40}
           />
         </label>
+        {aliasErrorMessage !== null ? (
+          <p className="quest-error" role="alert">
+            {aliasErrorMessage}
+          </p>
+        ) : null}
       </section>
 
       <section className="quest-panel">
         <h2 className="quest-panel-title">{t("home.routesTitle")}</h2>
         {isLoading ? <p className="quest-muted">{t("home.loadingRoutes")}</p> : null}
-        {errorMessage !== null ? (
+        {routeErrorMessage !== null ? (
           <p className="quest-error" role="alert">
-            {errorMessage}
+            {routeErrorMessage}
           </p>
         ) : null}
         <div className="route-grid">
@@ -449,6 +488,12 @@ function HomePage(): JSX.Element {
               <article key={route.id} className="route-card">
                 <h3 className="route-title">{routeDisplay.name}</h3>
                 <p className="route-copy">{routeDisplay.description}</p>
+                <p className="route-meta">
+                  {t("home.routeMeta", {
+                    stations: String(route.locationCount),
+                    minutes: String(route.estimatedDurationMinutes)
+                  })}
+                </p>
                 <button
                   className="quest-button"
                   type="button"
@@ -473,6 +518,7 @@ function HomePage(): JSX.Element {
             type="button"
             onClick={(): void => {
               play("tap");
+              setScannerErrorMessage(null);
               setIsScannerVisible((isVisible: boolean): boolean => !isVisible);
             }}
           >
@@ -489,12 +535,18 @@ function HomePage(): JSX.Element {
           }}
           onDetected={(payload: string): void => {
             setIsScannerVisible(false);
+            setScannerErrorMessage(null);
             continueWithQrPayload(payload);
           }}
           onError={(message: string): void => {
-            setErrorMessage(message);
+            setScannerErrorMessage(message);
           }}
         />
+        {scannerErrorMessage !== null ? (
+          <p className="quest-error" role="alert">
+            {scannerErrorMessage}
+          </p>
+        ) : null}
       </section>
     </main>
   );

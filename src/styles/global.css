@@ -168,6 +168,14 @@ body::after {
   background: var(--color-page-orb-left);
 }
 
+.app-shell {
+  min-height: 100vh;
+}
+
+.app-shell--quest-route .quest-shell {
+  padding-top: 4.35rem;
+}
+
 .route-stage {
   will-change: transform, opacity;
 }
@@ -482,6 +490,13 @@ body::after {
   color: var(--color-route-copy);
 }
 
+.route-meta {
+  margin: -0.4rem 0 0.76rem;
+  color: var(--color-muted);
+  font-size: 0.84rem;
+  font-weight: 650;
+}
+
 .quest-map {
   width: 100%;
   min-height: 18rem;
@@ -578,6 +593,12 @@ body::after {
   font-weight: 650;
 }
 
+.qr-scanner-note {
+  margin: 0;
+  color: #d4e5f7;
+  font-size: 0.86rem;
+}
+
 .qr-scanner-close {
   border-color: rgba(222, 233, 246, 0.62);
   color: #eaf3fc;
@@ -592,6 +613,22 @@ body::after {
   background: rgba(231, 244, 255, 0.76);
   color: #0e4f8d;
   font-weight: 650;
+}
+
+.quest-gps-age {
+  margin-top: 0.66rem;
+  padding: 0.48rem 0.64rem;
+  border-radius: 0.68rem;
+  border: 1px solid rgba(109, 165, 219, 0.38);
+  background: rgba(234, 244, 255, 0.76);
+  color: #1d5d96;
+  font-weight: 650;
+}
+
+.quest-gps-age--stale {
+  border-color: rgba(214, 151, 61, 0.5);
+  background: rgba(255, 243, 221, 0.82);
+  color: #8f5306;
 }
 
 .quest-offline-indicator {
@@ -827,6 +864,27 @@ select:focus-visible {
   border-radius: 0.78rem;
   background: var(--color-form-surface-bg);
   padding: 0.62rem 0.72rem;
+}
+
+.admin-editor-toolbar {
+  margin-top: 0.78rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.58rem;
+}
+
+.admin-confirmation-panel {
+  margin-top: 0.82rem;
+  padding: 0.68rem 0.76rem;
+  border-radius: 0.78rem;
+  border: 1px solid rgba(204, 152, 81, 0.56);
+  background: rgba(255, 242, 221, 0.82);
+}
+
+.admin-confirmation-copy {
+  margin: 0;
+  color: #7d4e12;
+  font-weight: 650;
 }
 
 .admin-preview-label {
@@ -1244,6 +1302,18 @@ html[data-theme="dark"] .quest-feedback {
   color: #b9dcff;
 }
 
+html[data-theme="dark"] .quest-gps-age {
+  border-color: rgba(98, 145, 189, 0.56);
+  background: rgba(17, 46, 69, 0.76);
+  color: #b9ddff;
+}
+
+html[data-theme="dark"] .quest-gps-age--stale {
+  border-color: rgba(201, 151, 83, 0.56);
+  background: rgba(69, 47, 18, 0.72);
+  color: #ffdca8;
+}
+
 html[data-theme="dark"] .quest-offline-indicator {
   border-color: rgba(201, 151, 83, 0.56);
   background: rgba(69, 47, 18, 0.72);
@@ -1283,6 +1353,15 @@ html[data-theme="dark"] .admin-dirty-pill {
 
 html[data-theme="dark"] .admin-preview-panel {
   background: rgba(16, 35, 52, 0.86);
+}
+
+html[data-theme="dark"] .admin-confirmation-panel {
+  border-color: rgba(197, 150, 85, 0.64);
+  background: rgba(70, 49, 19, 0.74);
+}
+
+html[data-theme="dark"] .admin-confirmation-copy {
+  color: #ffd59c;
 }
 
 html[data-theme="dark"] .run-abandon-warning-icon {
@@ -1380,6 +1459,19 @@ html[data-theme="dark"] .quest-button--ghost:not(:disabled):active {
 }
 
 @media (max-width: 36rem) {
+  .app-shell--quest-route .quest-shell {
+    padding-top: 5.2rem;
+    padding-bottom: 13.1rem;
+  }
+
+  .app-shell--quest-route .bug-report-fab {
+    bottom: calc(env(safe-area-inset-bottom) + 6.9rem);
+  }
+
+  .app-shell--quest-route .install-button {
+    bottom: calc(env(safe-area-inset-bottom) + 10.3rem);
+  }
+
   .top-controls {
     left: 0.72rem;
     right: 0.72rem;

@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 export interface GeolocationPoint {
   readonly latitude: number;
@@ -25,22 +25,27 @@ const INITIAL_STATE: GeolocationState = {
 
 interface UseGeolocationResult {
   readonly snapshot: GeolocationSnapshot | null;
+  readonly snapshotAgeMilliseconds: number | null;
+  readonly isSnapshotStale: boolean;
   readonly isLoading: boolean;
   readonly errorMessage: string | null;
   requestCurrentPosition: () => Promise<GeolocationSnapshot | null>;
 }
 
+const GPS_SNAPSHOT_STALE_THRESHOLD_MS = 45_000;
+
 export function useGeolocation(): UseGeolocationResult {
   const [state, setState] = useState<GeolocationState>(INITIAL_STATE);
+  const [clockTick, setClockTick] = useState<number>(Date.now());
 
   const requestCurrentPosition = useCallback(
     async (): Promise<GeolocationSnapshot | null> => {
       if (typeof navigator === "undefined" || !("geolocation" in navigator)) {
-        setState({
-          snapshot: null,
+        setState((previousState: GeolocationState): GeolocationState => ({
+          ...previousState,
           isLoading: false,
           errorMessage: "Geolocation is not supported by this browser."
-        });
+        }));
         return null;
       }
 
@@ -67,14 +72,15 @@ export function useGeolocation(): UseGeolocationResult {
               isLoading: false,
               errorMessage: null
             });
+            setClockTick(Date.now());
             resolve(snapshot);
           },
           (error: GeolocationPositionError): void => {
-            setState({
-              snapshot: null,
+            setState((previousState: GeolocationState): GeolocationState => ({
+              ...previousState,
               isLoading: false,
               errorMessage: error.message
-            });
+            }));
             resolve(null);
           },
           {
@@ -88,8 +94,36 @@ export function useGeolocation(): UseGeolocationResult {
     []
   );
 
+  useEffect(() => {
+    if (state.snapshot === null || typeof window === "undefined") {
+      return;
+    }
+
+    const intervalId = window.setInterval((): void => {
+      setClockTick(Date.now());
+    }, 1_000);
+
+    return (): void => {
+      window.clearInterval(intervalId);
+    };
+  }, [state.snapshot]);
+
+  const snapshotAgeMilliseconds = useMemo((): number | null => {
+    if (state.snapshot === null) {
+      return null;
+    }
+
+    return Math.max(0, clockTick - state.snapshot.timestamp);
+  }, [clockTick, state.snapshot]);
+
+  const isSnapshotStale: boolean =
+    snapshotAgeMilliseconds !== null &&
+    snapshotAgeMilliseconds > GPS_SNAPSHOT_STALE_THRESHOLD_MS;
+
   return {
     snapshot: state.snapshot,
+    snapshotAgeMilliseconds,
+    isSnapshotStale,
     isLoading: state.isLoading,
     errorMessage: state.errorMessage,
     requestCurrentPosition

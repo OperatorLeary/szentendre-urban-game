@@ -101,6 +101,22 @@ interface EditableStationRow {
   readonly expectedAnswersText: string;
 }
 
+type PendingAdminConfirmation =
+  | {
+      readonly kind: "sign_out_unsaved";
+    }
+  | {
+      readonly kind: "switch_route_unsaved";
+      readonly nextRouteId: string;
+    }
+  | {
+      readonly kind: "publish_station";
+      readonly locationId: string;
+    }
+  | {
+      readonly kind: "publish_dirty";
+    };
+
 function normalizeOptionalText(value: string): string | null {
   const normalizedValue: string = value.trim();
   return normalizedValue.length === 0 ? null : normalizedValue;
@@ -148,8 +164,33 @@ function AdminPage(): JSX.Element {
   const [savingLocationId, setSavingLocationId] = useState<string | null>(null);
   const [dirtyLocationIds, setDirtyLocationIds] = useState<readonly string[]>([]);
   const [previewLocationId, setPreviewLocationId] = useState<string | null>(null);
+  const [isSavingAllDirty, setIsSavingAllDirty] = useState<boolean>(false);
+  const [showDirtyOnly, setShowDirtyOnly] = useState<boolean>(false);
+  const [pendingConfirmation, setPendingConfirmation] =
+    useState<PendingAdminConfirmation | null>(null);
 
   const hasUnsavedChanges: boolean = dirtyLocationIds.length > 0;
+  const stationsByLocationId = useMemo(
+    (): ReadonlyMap<string, EditableStationRow> =>
+      new Map(
+        stations.map(
+          (station: EditableStationRow): readonly [string, EditableStationRow] => [
+            station.locationId,
+            station
+          ]
+        )
+      ),
+    [stations]
+  );
+  const visibleStations = useMemo(
+    (): readonly EditableStationRow[] =>
+      showDirtyOnly
+        ? stations.filter((station: EditableStationRow): boolean =>
+            dirtyLocationIds.includes(station.locationId)
+          )
+        : stations,
+    [dirtyLocationIds, showDirtyOnly, stations]
+  );
 
   useEffect(() => {
     let isCancelled = false;
@@ -209,6 +250,9 @@ function AdminPage(): JSX.Element {
         setSelectedRouteId("");
         setDirtyLocationIds([]);
         setPreviewLocationId(null);
+        setPendingConfirmation(null);
+        setShowDirtyOnly(false);
+        setIsSavingAllDirty(false);
         return;
       }
 
@@ -291,6 +335,8 @@ function AdminPage(): JSX.Element {
       });
       setDirtyLocationIds([]);
       setPreviewLocationId(null);
+      setPendingConfirmation(null);
+      setShowDirtyOnly(false);
       setIsRoutesLoading(false);
     };
 
@@ -309,6 +355,8 @@ function AdminPage(): JSX.Element {
         setStations([]);
         setDirtyLocationIds([]);
         setPreviewLocationId(null);
+        setPendingConfirmation(null);
+        setShowDirtyOnly(false);
         return;
       }
 
@@ -338,6 +386,8 @@ function AdminPage(): JSX.Element {
         setStations([]);
         setDirtyLocationIds([]);
         setPreviewLocationId(null);
+        setPendingConfirmation(null);
+        setShowDirtyOnly(false);
         setIsStationsLoading(false);
         return;
       }
@@ -438,6 +488,8 @@ function AdminPage(): JSX.Element {
       setStations(editorRows);
       setDirtyLocationIds([]);
       setPreviewLocationId(null);
+      setPendingConfirmation(null);
+      setShowDirtyOnly(false);
       setIsStationsLoading(false);
     };
 
@@ -477,11 +529,7 @@ function AdminPage(): JSX.Element {
     play("success");
   }, [magicEmail, play, supabase.auth, t]);
 
-  const handleSignOut = useCallback(async (): Promise<void> => {
-    if (hasUnsavedChanges && !window.confirm(t("admin.unsavedSignOutConfirm"))) {
-      return;
-    }
-
+  const performSignOut = useCallback(async (): Promise<void> => {
     await supabase.auth.signOut();
     setSession(null);
     setIsAdmin(false);
@@ -490,10 +538,24 @@ function AdminPage(): JSX.Element {
     setSelectedRouteId("");
     setDirtyLocationIds([]);
     setPreviewLocationId(null);
+    setPendingConfirmation(null);
+    setShowDirtyOnly(false);
+    setIsSavingAllDirty(false);
     setSaveError(null);
     setSaveMessage(null);
     play("tap");
-  }, [hasUnsavedChanges, play, supabase.auth, t]);
+  }, [play, supabase.auth]);
+
+  const handleSignOut = useCallback((): void => {
+    if (hasUnsavedChanges) {
+      setPendingConfirmation({
+        kind: "sign_out_unsaved"
+      });
+      return;
+    }
+
+    void performSignOut();
+  }, [hasUnsavedChanges, performSignOut]);
 
   const updateStationField = useCallback(
     (locationId: string, field: StationFieldKey, value: string): void => {
@@ -515,36 +577,49 @@ function AdminPage(): JSX.Element {
     []
   );
 
+  const applyRouteSelection = useCallback((nextRouteId: string): void => {
+    setSelectedRouteId(nextRouteId);
+    setDirtyLocationIds([]);
+    setPreviewLocationId(null);
+    setPendingConfirmation(null);
+    setShowDirtyOnly(false);
+  }, []);
+
   const handleRouteSelectionChange = useCallback(
     (nextRouteId: string): void => {
       if (nextRouteId === selectedRouteId) {
         return;
       }
 
-      if (hasUnsavedChanges && !window.confirm(t("admin.unsavedRouteChangeConfirm"))) {
+      if (hasUnsavedChanges) {
+        setPendingConfirmation({
+          kind: "switch_route_unsaved",
+          nextRouteId
+        });
         return;
       }
 
-      setSelectedRouteId(nextRouteId);
-      setDirtyLocationIds([]);
-      setPreviewLocationId(null);
+      applyRouteSelection(nextRouteId);
     },
-    [hasUnsavedChanges, selectedRouteId, t]
+    [applyRouteSelection, hasUnsavedChanges, selectedRouteId]
   );
 
-  const handleSaveStation = useCallback(
-    async (row: EditableStationRow): Promise<void> => {
-      if (selectedRouteId.length === 0) {
-        return;
+  const persistStationChanges = useCallback(
+    async (
+      row: EditableStationRow,
+      options?: {
+        readonly suppressSuccessMessage?: boolean;
       }
-
-      if (!window.confirm(t("admin.publishConfirm"))) {
-        return;
+    ): Promise<boolean> => {
+      if (selectedRouteId.length === 0) {
+        return false;
       }
 
       setSavingLocationId(row.locationId);
       setSaveError(null);
-      setSaveMessage(null);
+      if (!options?.suppressSuccessMessage) {
+        setSaveMessage(null);
+      }
 
       const payload: Database["public"]["Tables"]["route_stations"]["Insert"] = {
         route_id: selectedRouteId,
@@ -570,22 +645,136 @@ function AdminPage(): JSX.Element {
         setSaveError(error.message);
         setSavingLocationId(null);
         play("error");
-        return;
+        return false;
       }
 
-      setSaveMessage(
-        t("admin.stationSaved", {
-          station: `${String(row.sequenceIndex)}. ${row.locationName}`
-        })
-      );
       setDirtyLocationIds((previousIds: readonly string[]): readonly string[] =>
         previousIds.filter((locationId: string): boolean => locationId !== row.locationId)
       );
       setSavingLocationId(null);
       play("success");
+
+      if (!options?.suppressSuccessMessage) {
+        setSaveMessage(
+          t("admin.stationSaved", {
+            station: `${String(row.sequenceIndex)}. ${row.locationName}`
+          })
+        );
+      }
+
+      return true;
     },
     [play, selectedRouteId, supabase, t]
   );
+
+  const publishDirtyStations = useCallback(async (): Promise<void> => {
+    const dirtyStations = stations.filter((station: EditableStationRow): boolean =>
+      dirtyLocationIds.includes(station.locationId)
+    );
+    if (dirtyStations.length === 0) {
+      setSaveMessage(t("admin.noDirtyStationsToPublish"));
+      return;
+    }
+
+    setIsSavingAllDirty(true);
+    setSaveError(null);
+    setSaveMessage(null);
+
+    let savedCount = 0;
+    for (const station of dirtyStations) {
+      const isSuccess = await persistStationChanges(station, {
+        suppressSuccessMessage: true
+      });
+      if (!isSuccess) {
+        break;
+      }
+
+      savedCount += 1;
+    }
+
+    setIsSavingAllDirty(false);
+    if (savedCount > 0) {
+      setSaveMessage(
+        t("admin.savedDirtySummary", {
+          count: String(savedCount)
+        })
+      );
+    }
+  }, [dirtyLocationIds, persistStationChanges, stations, t]);
+
+  const requestPublishStation = useCallback((locationId: string): void => {
+    setPendingConfirmation({
+      kind: "publish_station",
+      locationId
+    });
+  }, []);
+
+  const requestPublishDirty = useCallback((): void => {
+    if (!hasUnsavedChanges) {
+      return;
+    }
+
+    setPendingConfirmation({
+      kind: "publish_dirty"
+    });
+  }, [hasUnsavedChanges]);
+
+  const pendingConfirmationMessage = useMemo((): string | null => {
+    if (pendingConfirmation === null) {
+      return null;
+    }
+
+    switch (pendingConfirmation.kind) {
+      case "sign_out_unsaved":
+        return t("admin.unsavedSignOutConfirm");
+      case "switch_route_unsaved":
+        return t("admin.unsavedRouteChangeConfirm");
+      case "publish_dirty":
+        return t("admin.publishDirtyConfirm");
+      case "publish_station":
+        return t("admin.publishConfirm");
+      default:
+        return null;
+    }
+  }, [pendingConfirmation, t]);
+
+  const handleConfirmPendingAction = useCallback((): void => {
+    if (pendingConfirmation === null) {
+      return;
+    }
+
+    if (pendingConfirmation.kind === "sign_out_unsaved") {
+      setPendingConfirmation(null);
+      void performSignOut();
+      return;
+    }
+
+    if (pendingConfirmation.kind === "switch_route_unsaved") {
+      const nextRouteId = pendingConfirmation.nextRouteId;
+      setPendingConfirmation(null);
+      applyRouteSelection(nextRouteId);
+      return;
+    }
+
+    if (pendingConfirmation.kind === "publish_dirty") {
+      setPendingConfirmation(null);
+      void publishDirtyStations();
+      return;
+    }
+
+    const targetStation = stationsByLocationId.get(pendingConfirmation.locationId);
+    setPendingConfirmation(null);
+    if (targetStation !== undefined) {
+      void persistStationChanges(targetStation);
+    }
+  }, [
+    applyRouteSelection,
+    pendingConfirmation,
+    performSignOut,
+    persistStationChanges,
+    publishDirtyStations,
+    stationsByLocationId
+  ]);
 
   if (isAuthLoading) {
     return (
@@ -661,7 +850,7 @@ function AdminPage(): JSX.Element {
               className="quest-button quest-button--ghost"
               type="button"
               onClick={(): void => {
-                void handleSignOut();
+                handleSignOut();
               }}
             >
               {t("admin.signOut")}
@@ -689,7 +878,7 @@ function AdminPage(): JSX.Element {
             className="quest-button quest-button--ghost"
             type="button"
             onClick={(): void => {
-              void handleSignOut();
+              handleSignOut();
             }}
           >
             {t("admin.signOut")}
@@ -723,18 +912,63 @@ function AdminPage(): JSX.Element {
             {t("admin.unsavedChangesCount", { count: String(dirtyLocationIds.length) })}
           </p>
         ) : null}
+        {pendingConfirmationMessage !== null ? (
+          <article className="admin-confirmation-panel" role="alertdialog">
+            <p className="admin-confirmation-copy">{pendingConfirmationMessage}</p>
+            <div className="quest-actions">
+              <button
+                className="quest-button quest-button--ghost"
+                type="button"
+                onClick={(): void => {
+                  setPendingConfirmation(null);
+                }}
+              >
+                {t("admin.confirmCancel")}
+              </button>
+              <button
+                className="quest-button"
+                type="button"
+                onClick={handleConfirmPendingAction}
+              >
+                {t("admin.confirmProceed")}
+              </button>
+            </div>
+          </article>
+        ) : null}
         {saveMessage !== null ? <p className="quest-feedback">{saveMessage}</p> : null}
         {saveError !== null ? <p className="quest-error">{saveError}</p> : null}
       </section>
 
       <section className="quest-panel">
         <h2 className="quest-panel-title">{t("admin.stationEditorTitle")}</h2>
+        <div className="admin-editor-toolbar">
+          <button
+            className="quest-button quest-button--ghost"
+            type="button"
+            onClick={(): void => {
+              setShowDirtyOnly((previousValue: boolean): boolean => !previousValue);
+            }}
+          >
+            {showDirtyOnly ? t("admin.showAllStations") : t("admin.showDirtyOnly")}
+          </button>
+          <button
+            className="quest-button"
+            type="button"
+            disabled={!hasUnsavedChanges || isSavingAllDirty || savingLocationId !== null}
+            onClick={requestPublishDirty}
+          >
+            {isSavingAllDirty ? t("admin.publishingDirty") : t("admin.publishDirty")}
+          </button>
+        </div>
         {isStationsLoading ? <p className="quest-muted">{t("admin.loadingStations")}</p> : null}
         {!isStationsLoading && stations.length === 0 ? (
           <p className="quest-muted">{t("admin.noStations")}</p>
         ) : null}
+        {!isStationsLoading && stations.length > 0 && showDirtyOnly && visibleStations.length === 0 ? (
+          <p className="quest-muted">{t("admin.noDirtyStationsVisible")}</p>
+        ) : null}
 
-        {stations.map((station: EditableStationRow): JSX.Element => {
+        {visibleStations.map((station: EditableStationRow): JSX.Element => {
           const isDirty: boolean = dirtyLocationIds.includes(station.locationId);
           const isPreviewVisible: boolean = previewLocationId === station.locationId;
 
@@ -868,10 +1102,10 @@ function AdminPage(): JSX.Element {
                 <button
                   className="quest-button"
                   type="button"
-                  disabled={savingLocationId === station.locationId}
+                  disabled={savingLocationId === station.locationId || isSavingAllDirty}
                   onClick={(): void => {
                     play("tap");
-                    void handleSaveStation(station);
+                    requestPublishStation(station.locationId);
                   }}
                 >
                   {savingLocationId === station.locationId

@@ -9,6 +9,8 @@ export interface RouteOverview {
   readonly name: string;
   readonly description: string | null;
   readonly firstLocationSlug: string | null;
+  readonly locationCount: number;
+  readonly estimatedDurationMinutes: number;
 }
 
 export type ListRoutesRequest = Record<string, never>;
@@ -18,6 +20,11 @@ export type ListRoutesResponse = readonly RouteOverview[];
 interface ListRoutesDependencies {
   readonly routeRepository: RouteRepositoryPort;
   readonly locationRepository: LocationRepositoryPort;
+}
+
+function estimateDurationMinutes(locationCount: number): number {
+  const normalizedLocationCount = Math.max(locationCount, 1);
+  return Math.max(12, Math.round(normalizedLocationCount * 7.5));
 }
 
 export class ListRoutesUseCase
@@ -33,13 +40,16 @@ export class ListRoutesUseCase
       routes.map(async (route: Route): Promise<RouteOverview> => {
         const locations = await this.dependencies.locationRepository.listByRoute(route.id);
         const firstLocationSlug: string | null = locations[0]?.slug ?? null;
+        const locationCount: number = locations.length;
 
         return {
           id: route.id,
           slug: route.slug,
           name: route.name,
           description: route.description,
-          firstLocationSlug
+          firstLocationSlug,
+          locationCount,
+          estimatedDurationMinutes: estimateDurationMinutes(locationCount)
         };
       })
     );

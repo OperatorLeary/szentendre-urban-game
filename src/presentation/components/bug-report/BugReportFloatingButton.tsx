@@ -1,8 +1,9 @@
-import { useState, type JSX, type SyntheticEvent } from "react";
+import { useRef, useState, type JSX, type SyntheticEvent } from "react";
 
 import { useLanguage } from "@/presentation/app/LanguageContext";
 import { useSound } from "@/presentation/app/SoundContext";
 import { useBugReport } from "@/presentation/hooks/useBugReport";
+import { useDialogA11y } from "@/presentation/hooks/useDialogA11y";
 import { useQuestRuntime } from "@/presentation/hooks/useQuestRuntime";
 
 export function BugReportFloatingButton(): JSX.Element {
@@ -12,6 +13,17 @@ export function BugReportFloatingButton(): JSX.Element {
   const [description, setDescription] = useState<string>("");
   const { state } = useQuestRuntime();
   const bugReport = useBugReport();
+  const formRef = useRef<HTMLFormElement | null>(null);
+
+  useDialogA11y({
+    isOpen,
+    containerRef: formRef,
+    onRequestClose: (): void => {
+      if (!bugReport.isSubmitting) {
+        setIsOpen(false);
+      }
+    }
+  });
 
   const submitBugReport = (event: SyntheticEvent<HTMLFormElement>): void => {
     event.preventDefault();
@@ -44,10 +56,23 @@ export function BugReportFloatingButton(): JSX.Element {
       </button>
 
       {isOpen ? (
-        <section className="bug-report-modal" aria-modal="true" role="dialog">
-          <form className="bug-report-form" onSubmit={submitBugReport}>
-            <h2 className="bug-report-title">{t("bugReport.title")}</h2>
-            <p className="bug-report-copy">
+        <section
+          className="bug-report-modal"
+          aria-modal="true"
+          role="dialog"
+          aria-labelledby="bug-report-title"
+          aria-describedby="bug-report-copy"
+          onMouseDown={(event): void => {
+            if (event.target === event.currentTarget && !bugReport.isSubmitting) {
+              setIsOpen(false);
+            }
+          }}
+        >
+          <form className="bug-report-form" onSubmit={submitBugReport} ref={formRef} tabIndex={-1}>
+            <h2 className="bug-report-title" id="bug-report-title">
+              {t("bugReport.title")}
+            </h2>
+            <p className="bug-report-copy" id="bug-report-copy">
               {t("bugReport.copy")}
             </p>
             <textarea

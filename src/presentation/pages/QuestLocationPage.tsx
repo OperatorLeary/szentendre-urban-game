@@ -2,6 +2,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ChangeEvent,
   type KeyboardEvent,
@@ -42,6 +43,7 @@ type PendingValidation =
     };
 
 const NAVIGATION_MODE_STORAGE_KEY = "szentendre-city-quest-navigation-mode";
+const NAVIGATION_MODES: readonly NavigationMode[] = ["text", "map"];
 
 function resolveInitialNavigationMode(): NavigationMode {
   if (typeof window === "undefined") {
@@ -327,6 +329,7 @@ function QuestLocationPage(): JSX.Element {
   const [navigationMode, setNavigationMode] = useState<NavigationMode>(
     resolveInitialNavigationMode
   );
+  const navigationModeButtonRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const runControl = useRunControl();
 
   const preferRequestedStart = useMemo((): boolean => {
@@ -388,6 +391,24 @@ function QuestLocationPage(): JSX.Element {
 
     window.localStorage.setItem(NAVIGATION_MODE_STORAGE_KEY, navigationMode);
   }, [navigationMode]);
+
+  const handleNavigationModeKeyDown = useCallback(
+    (event: KeyboardEvent<HTMLButtonElement>, index: number): void => {
+      if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") {
+        return;
+      }
+
+      event.preventDefault();
+      const direction: number = event.key === "ArrowRight" ? 1 : -1;
+      const nextIndex: number =
+        (index + direction + NAVIGATION_MODES.length) % NAVIGATION_MODES.length;
+      const nextMode: NavigationMode = NAVIGATION_MODES[nextIndex] ?? navigationMode;
+      setNavigationMode(nextMode);
+      play("tap");
+      navigationModeButtonRefs.current[nextIndex]?.focus();
+    },
+    [navigationMode, play]
+  );
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -499,6 +520,20 @@ function QuestLocationPage(): JSX.Element {
       activeLocation.position.longitude
     );
   }, [activeLocation, geolocation.snapshot]);
+  const gpsSnapshotAgeSeconds: number | null =
+    geolocation.snapshotAgeMilliseconds === null
+      ? null
+      : Math.max(0, Math.round(geolocation.snapshotAgeMilliseconds / 1000));
+  const gpsSnapshotAgeLabel: string | null =
+    gpsSnapshotAgeSeconds === null
+      ? null
+      : geolocation.isSnapshotStale
+        ? t("quest.gpsSnapshotAgeStale", {
+            seconds: String(gpsSnapshotAgeSeconds)
+          })
+        : t("quest.gpsSnapshotAge", {
+            seconds: String(gpsSnapshotAgeSeconds)
+          });
 
   const handleValidationSuccess = useCallback(
     (session: GameSessionSnapshot): void => {
@@ -918,35 +953,35 @@ function QuestLocationPage(): JSX.Element {
       <section className="quest-panel">
         <div className="quest-navigation-header">
           <h2 className="quest-panel-title">{t("quest.navigationTitle")}</h2>
-        <div
-          className="quest-navigation-toggle"
-          role="group"
-          aria-label={t("quest.navigationTitle")}
+          <div
+            className="quest-navigation-toggle"
+            role="radiogroup"
+            aria-label={t("quest.navigationTitle")}
           >
-            <button
-              className={`theme-switcher-button ${
-                navigationMode === "text" ? "theme-switcher-button--active" : ""
-              }`}
-              type="button"
-              onClick={(): void => {
-                play("tap");
-                setNavigationMode("text");
-              }}
-            >
-              {t("quest.navigationTextMode")}
-            </button>
-            <button
-              className={`theme-switcher-button ${
-                navigationMode === "map" ? "theme-switcher-button--active" : ""
-              }`}
-              type="button"
-              onClick={(): void => {
-                play("tap");
-                setNavigationMode("map");
-              }}
-            >
-              {t("quest.navigationMapMode")}
-            </button>
+            {NAVIGATION_MODES.map((mode: NavigationMode, index: number): JSX.Element => (
+              <button
+                key={mode}
+                ref={(element): void => {
+                  navigationModeButtonRefs.current[index] = element;
+                }}
+                className={`theme-switcher-button ${
+                  navigationMode === mode ? "theme-switcher-button--active" : ""
+                }`}
+                type="button"
+                role="radio"
+                aria-checked={navigationMode === mode}
+                tabIndex={navigationMode === mode ? 0 : -1}
+                onKeyDown={(event): void => {
+                  handleNavigationModeKeyDown(event, index);
+                }}
+                onClick={(): void => {
+                  play("tap");
+                  setNavigationMode(mode);
+                }}
+              >
+                {mode === "text" ? t("quest.navigationTextMode") : t("quest.navigationMapMode")}
+              </button>
+            ))}
           </div>
         </div>
         <p className="quest-copy quest-instruction-brief">{localizedInstructionBrief}</p>
@@ -1124,6 +1159,16 @@ function QuestLocationPage(): JSX.Element {
           </>
         )}
 
+        {!isRunCompleted && gpsSnapshotAgeLabel !== null ? (
+          <p
+            className={`quest-gps-age ${
+              geolocation.isSnapshotStale ? "quest-gps-age--stale" : ""
+            }`}
+            role="status"
+          >
+            {gpsSnapshotAgeLabel}
+          </p>
+        ) : null}
         {!isRunCompleted && computedDistanceFromTarget !== null ? (
           <p className="quest-muted">
             {t("quest.currentDistance")}: {formatDistanceMeters(computedDistanceFromTarget)}

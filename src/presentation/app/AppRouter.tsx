@@ -9,6 +9,7 @@ import {
 } from "react";
 import {
   NavigationType,
+  matchPath,
   Route,
   Routes,
   useLocation,
@@ -63,6 +64,8 @@ function AppRouter(): JSX.Element {
     navigationType === NavigationType.Pop
       ? "route-stage route-stage--back"
       : "route-stage route-stage--forward";
+  const isQuestLocationRoute: boolean =
+    matchPath(ROUTES.routeLocation, location.pathname) !== null;
 
   const handleIntroComplete = useCallback((): void => {
     setIsIntroVisible(false);
@@ -72,7 +75,7 @@ function AppRouter(): JSX.Element {
   }, []);
 
   return (
-    <>
+    <div className={`app-shell ${isQuestLocationRoute ? "app-shell--quest-route" : ""}`}>
       <IntroSplash isVisible={isIntroVisible} onComplete={handleIntroComplete} />
       <DesktopDeviceNotice isSuppressed={isIntroVisible} />
       <div className="top-controls">
@@ -92,7 +95,7 @@ function AppRouter(): JSX.Element {
           </Routes>
         </div>
       </Suspense>
-    </>
+    </div>
   );
 }
 

@@ -17,3 +17,13 @@ pm run build passed after CSS update. Attempted Playwright skill client verifica
 - 2026-02-21: Runtime smoke checks passed for both dev (`npm run dev -- --host 127.0.0.1 --port 4173`) and preview (`npm run preview -- --host 127.0.0.1 --port 4174`) with HTTP 200 and expected HTML title.
 - 2026-02-21: Attempted required `develop-web-game` Playwright client run; blocked because `playwright` package is not installed in this repo/environment (`ERR_MODULE_NOT_FOUND` from `web_game_playwright_client.js`).
 - TODO: Install Playwright (`npm i -D playwright` and `npx playwright install`) if automated gameplay verification with the skill client is needed in future runs.
+- 2026-02-21: Implemented broad UI/UX pass across app shell, home, quest, and admin.
+- 2026-02-21: Added reusable dialog accessibility hook (`useDialogA11y`) and wired it to QR scanner, bug report modal, abandon dialog, and desktop notice (focus trap, Escape close, focus restore, dialog labels, backdrop close).
+- 2026-02-21: Improved QR scanner reliability with error throttling and clearer camera guidance/error mapping (permission denied / no camera / insecure context), plus new localized copy.
+- 2026-02-21: Improved control semantics and keyboard UX: theme switcher + quest navigation mode now use radio semantics with arrow-key navigation.
+- 2026-02-21: Added route-context layout handling to prevent fixed-control overlap on mobile quest screens (`app-shell--quest-route` spacing + FAB offsets).
+- 2026-02-21: Home page improvements: route cards now show metadata (station count + estimated minutes), and errors are split by scope (route/alias/scanner) with transient auto-clear for alias/scanner.
+- 2026-02-21: Admin editor workflow upgrades: dirty-only filter, publish-all-dirty action, inline confirmation panel replacing repetitive `window.confirm`, and summary feedback for batch publish.
+- 2026-02-21: Geolocation resilience pass: retain last known snapshot on GPS request failures and surface live GPS-fix age/stale status in quest UI.
+- 2026-02-21: `npm run check` passes after changes (lint + typecheck + build).
+- 2026-02-21: Re-attempted Playwright skill client validation; still blocked by missing `playwright` dependency (`ERR_MODULE_NOT_FOUND`).
