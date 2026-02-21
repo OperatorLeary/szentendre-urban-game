@@ -298,16 +298,48 @@ function HomePage(): JSX.Element {
         return;
       }
 
-      play("tap");
-      setAliasErrorMessage(null);
-      setScannerErrorMessage(null);
-      setStoredAlias(aliasValidation.normalizedAlias);
-      void navigate({
-        pathname: toRouteLocationPath(parsedPayload.routeSlug, parsedPayload.locationSlug),
-        search: "?entry=qr"
-      });
+      const openFromQr = async (): Promise<void> => {
+        let targetRouteSlug: string = parsedPayload.routeSlug;
+
+        try {
+          const resolvedEntryRoute = await gameUseCases.resolveQrEntryRoute({
+            scannedRouteSlug: parsedPayload.routeSlug,
+            locationSlug: parsedPayload.locationSlug
+          });
+
+          if (resolvedEntryRoute.routeSlug.length > 0) {
+            targetRouteSlug = resolvedEntryRoute.routeSlug;
+          }
+
+          if (targetRouteSlug !== parsedPayload.routeSlug) {
+            logger.info("QR entry remapped to a shorter compatible route.", {
+              scannedRouteSlug: parsedPayload.routeSlug,
+              targetRouteSlug,
+              locationSlug: parsedPayload.locationSlug,
+              matchedRouteSlugs: resolvedEntryRoute.matchedRouteSlugs
+            });
+          }
+        } catch (error) {
+          logger.warn("Failed to resolve best QR entry route. Falling back to scanned route.", {
+            scannedRouteSlug: parsedPayload.routeSlug,
+            locationSlug: parsedPayload.locationSlug,
+            cause: error instanceof Error ? error.message : String(error)
+          });
+        }
+
+        play("tap");
+        setAliasErrorMessage(null);
+        setScannerErrorMessage(null);
+        setStoredAlias(aliasValidation.normalizedAlias);
+        await navigate({
+          pathname: toRouteLocationPath(targetRouteSlug, parsedPayload.locationSlug),
+          search: "?entry=qr"
+        });
+      };
+
+      void openFromQr();
     },
-    [navigate, play, playerAlias, t]
+    [gameUseCases, logger, navigate, play, playerAlias, t]
   );
 
   const requestGpsPermission = useCallback(async (): Promise<void> => {

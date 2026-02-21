@@ -13,6 +13,10 @@ import type {
   ListRoutesResponse
 } from "@/application/use-cases/list-routes.use-case";
 import type {
+  ResolveQrEntryRouteRequest,
+  ResolveQrEntryRouteResponse
+} from "@/application/use-cases/resolve-qr-entry-route.use-case";
+import type {
   SubmitBugReportRequest,
   SubmitBugReportResponse
 } from "@/application/use-cases/submit-bug-report.use-case";
@@ -27,6 +31,9 @@ import type {
 
 export interface GameUseCases {
   listRoutes(): Promise<ListRoutesResponse>;
+  resolveQrEntryRoute(
+    request: ResolveQrEntryRouteRequest
+  ): Promise<ResolveQrEntryRouteResponse>;
   abandonActiveRun(): Promise<AbandonActiveRunResponse>;
   ensureRunSession(
     request: EnsureRunSessionRequest

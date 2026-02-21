@@ -12,6 +12,7 @@ import {
   EnsureRunSessionUseCase,
   GetRunProgressUseCase,
   ListRoutesUseCase,
+  ResolveQrEntryRouteUseCase,
   SubmitBugReportUseCase,
   ValidateGpsCheckinUseCase,
   ValidateQrCheckinUseCase
@@ -51,6 +52,10 @@ export function createGameUseCases(
   });
 
   const listRoutesUseCase = new ListRoutesUseCase({
+    routeRepository: input.repositories.routeRepository,
+    locationRepository: input.repositories.locationRepository
+  });
+  const resolveQrEntryRouteUseCase = new ResolveQrEntryRouteUseCase({
     routeRepository: input.repositories.routeRepository,
     locationRepository: input.repositories.locationRepository
   });
@@ -103,6 +108,9 @@ export function createGameUseCases(
   return {
     async listRoutes() {
       return listRoutesUseCase.execute({});
+    },
+    async resolveQrEntryRoute(request) {
+      return resolveQrEntryRouteUseCase.execute(request);
     },
     async abandonActiveRun() {
       return abandonActiveRunUseCase.execute({});

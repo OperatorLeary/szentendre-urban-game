@@ -2,6 +2,43 @@
 -- Rebuilds "medium" from the first 12 stations of the "long" route.
 -- This keeps the station order coherent while removing the 4-station cliff.
 
+do $$
+declare
+  medium_route_id uuid;
+  long_route_id uuid;
+  long_segment_count integer;
+begin
+  select id into medium_route_id
+  from public.routes
+  where slug = 'medium'
+  limit 1;
+
+  if medium_route_id is null then
+    raise exception 'phase22_rebalance_medium_route: route slug "medium" not found';
+  end if;
+
+  select id into long_route_id
+  from public.routes
+  where slug = 'long'
+  limit 1;
+
+  if long_route_id is null then
+    raise exception 'phase22_rebalance_medium_route: route slug "long" not found';
+  end if;
+
+  select count(*) into long_segment_count
+  from public.route_locations rl
+  where rl.route_id = long_route_id
+    and rl.sequence_index between 1 and 12;
+
+  if long_segment_count < 12 then
+    raise exception
+      'phase22_rebalance_medium_route: long route has % mapped rows in sequence range 1..12, expected at least 12',
+      long_segment_count;
+  end if;
+end
+$$;
+
 with medium_route as (
   select id
   from public.routes

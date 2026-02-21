@@ -12,6 +12,7 @@ export * from "@/application/use-cases/abandon-active-run.use-case";
 export * from "@/application/use-cases/ensure-run-session.use-case";
 export * from "@/application/use-cases/get-run-progress.use-case";
 export * from "@/application/use-cases/list-routes.use-case";
+export * from "@/application/use-cases/resolve-qr-entry-route.use-case";
 export * from "@/application/use-cases/submit-bug-report.use-case";
 export * from "@/application/use-cases/use-case.contract";
 export * from "@/application/use-cases/validate-gps-checkin.use-case";
