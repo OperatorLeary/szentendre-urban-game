@@ -686,17 +686,19 @@ function QuestLocationPage(): JSX.Element {
       <section className="quest-panel">
         <div className="quest-panel-header">
           <h1 className="quest-panel-title">{localizedRouteTitle}</h1>
-          <button
-            className="quest-button quest-button--danger"
-            type="button"
-            onClick={(): void => {
-              play("tap");
-              runControl.resetAbandonError();
-              setIsAbandonDialogOpen(true);
-            }}
-          >
-            {t("quest.abandonJourney")}
-          </button>
+          {!isRunCompleted ? (
+            <button
+              className="quest-button quest-button--danger"
+              type="button"
+              onClick={(): void => {
+                play("tap");
+                runControl.resetAbandonError();
+                setIsAbandonDialogOpen(true);
+              }}
+            >
+              {t("quest.abandonJourney")}
+            </button>
+          ) : null}
         </div>
         <p className="quest-muted">
           {t("quest.progress")}: {progressRatio} ({progressPercentage}%)
