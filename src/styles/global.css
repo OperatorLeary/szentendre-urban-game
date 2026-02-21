@@ -533,11 +533,12 @@ body::after {
 
 .qr-scanner-video {
   width: 100%;
-  height: min(78vh, 46rem);
+  height: clamp(21rem, 78dvh, 46rem);
   border-radius: 1.05rem;
   border: 1px solid rgba(175, 203, 230, 0.45);
   background: #04080f;
   object-fit: cover;
+  display: block;
 }
 
 .qr-scanner-overlay {
@@ -556,6 +557,7 @@ body::after {
   width: min(60rem, 100%);
   display: grid;
   gap: 0.72rem;
+  max-height: calc(100dvh - 2rem);
   animation: modal-enter var(--dur-base) var(--ease-out) both;
 }
 
@@ -1154,6 +1156,34 @@ html[data-theme="dark"] .quest-button--ghost:not(:disabled):active {
 
   .quest-summary-grid {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .qr-scanner-overlay {
+    align-items: stretch;
+    padding:
+      max(0.35rem, env(safe-area-inset-top))
+      0.45rem
+      max(0.45rem, env(safe-area-inset-bottom));
+  }
+
+  .qr-scanner-frame {
+    width: 100%;
+    max-height: 100%;
+    gap: 0.55rem;
+  }
+
+  .qr-scanner-toolbar {
+    align-items: flex-start;
+  }
+
+  .qr-scanner-hint {
+    font-size: 0.92rem;
+  }
+
+  .qr-scanner-video {
+    height: calc(100dvh - 6.35rem);
+    min-height: 24rem;
+    border-radius: 0.82rem;
   }
 }
 

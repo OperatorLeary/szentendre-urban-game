@@ -1,4 +1,5 @@
 import { useEffect, useRef, type JSX } from "react";
+import { createPortal } from "react-dom";
 
 import { useLanguage } from "@/presentation/app/LanguageContext";
 
@@ -96,7 +97,11 @@ export function QrScannerPanel({
     return null;
   }
 
-  return (
+  if (typeof document === "undefined") {
+    return null;
+  }
+
+  return createPortal(
     <section className="qr-scanner-overlay" role="dialog" aria-modal="true">
       <div className="qr-scanner-frame">
         <div className="qr-scanner-toolbar">
@@ -111,6 +116,7 @@ export function QrScannerPanel({
         </div>
         <video className="qr-scanner-video" ref={videoRef} muted playsInline />
       </div>
-    </section>
+    </section>,
+    document.body
   );
 }
