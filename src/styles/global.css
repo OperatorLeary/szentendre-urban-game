@@ -344,17 +344,23 @@ body::after {
   margin-top: 0.72rem;
   display: grid;
   gap: 0.52rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .quest-choice-button {
-  border: 1px solid var(--color-input-border);
-  border-radius: 0.76rem;
-  background: var(--color-input-bg);
-  color: inherit;
-  padding: 0.54rem 0.68rem;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 0.94rem;
+  color: #fff;
+  min-height: 4.1rem;
+  padding: 0.62rem 0.78rem;
   text-align: left;
   font: inherit;
+  font-weight: 700;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  box-shadow: 0 8px 16px rgba(10, 37, 60, 0.2);
   transition:
     border-color var(--dur-fast) var(--ease-smooth),
     box-shadow var(--dur-fast) var(--ease-smooth),
@@ -362,23 +368,80 @@ body::after {
 }
 
 .quest-choice-button:hover {
-  border-color: var(--color-input-border-hover);
+  filter: brightness(1.04);
 }
 
 .quest-choice-button:focus-visible {
   outline: none;
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(10, 132, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.95);
+  box-shadow:
+    0 0 0 3px rgba(255, 255, 255, 0.22),
+    0 8px 18px rgba(9, 37, 58, 0.3);
   transform: translateY(-1px);
 }
 
 .quest-choice-button.is-selected {
-  border-color: rgba(10, 132, 255, 0.62);
-  background: rgba(10, 132, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.95);
+  box-shadow:
+    0 0 0 3px rgba(255, 255, 255, 0.24),
+    0 10px 18px rgba(8, 34, 52, 0.35);
 }
 
 .quest-choice-key {
   font-weight: 760;
+  letter-spacing: 0.01em;
+}
+
+.quest-choice-button--full-row {
+  grid-column: 1 / -1;
+}
+
+.quest-choice-button--kahoot-0 {
+  background: linear-gradient(180deg, #ff6f7f 0%, #e34758 58%, #c62f40 100%);
+}
+
+.quest-choice-button--kahoot-1 {
+  background: linear-gradient(180deg, #4aa9ff 0%, #248cf6 58%, #0e6bd4 100%);
+}
+
+.quest-choice-button--kahoot-2 {
+  background: linear-gradient(180deg, #f2c14f 0%, #dcaa2c 58%, #bf8e14 100%);
+  color: #172536;
+}
+
+.quest-choice-button--kahoot-3 {
+  background: linear-gradient(180deg, #74cf70 0%, #49b947 58%, #279f30 100%);
+}
+
+.quest-choice-marker {
+  width: 1.66rem;
+  min-width: 1.66rem;
+  height: 1.66rem;
+  border-radius: 0.4rem;
+  display: inline-grid;
+  place-items: center;
+  font-size: 0.96rem;
+  font-weight: 900;
+  background: rgba(255, 255, 255, 0.2);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.quest-choice-marker--kahoot-2 {
+  background: rgba(23, 37, 54, 0.2);
+}
+
+html[data-theme="dark"] .quest-choice-button {
+  border-color: rgba(255, 255, 255, 0.38);
+}
+
+@media (max-width: 39rem) {
+  .quest-choice-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .quest-choice-button--full-row {
+    grid-column: auto;
+  }
 }
 
 .quest-manual-answer-toggle {

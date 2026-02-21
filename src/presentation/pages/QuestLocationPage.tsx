@@ -302,7 +302,7 @@ interface ParsedQuestionOption {
 }
 
 function parseQuestionOptions(questionPrompt: string): readonly ParsedQuestionOption[] {
-  return questionPrompt
+  const lineOptions = questionPrompt
     .split(/\r?\n/)
     .flatMap((line): readonly ParsedQuestionOption[] => {
       const optionMatch = line.match(/^\s*([a-z])\)\s*(.+)\s*$/i);
@@ -323,6 +323,28 @@ function parseQuestionOptions(questionPrompt: string): readonly ParsedQuestionOp
         }
       ];
     });
+
+  if (lineOptions.length > 0) {
+    return lineOptions;
+  }
+
+  const inlineOptions: ParsedQuestionOption[] = [];
+  const optionPattern =
+    /(?:^|\s)([a-z])\)\s*([^]+?)(?=(?:\s+[a-z]\)\s)|(?:\r?\n)|$)/gim;
+  for (const optionMatch of questionPrompt.matchAll(optionPattern)) {
+    const optionKey: string = optionMatch[1]?.trim().toLowerCase() ?? "";
+    const optionLabel: string = optionMatch[2]?.trim() ?? "";
+    if (optionKey.length === 0 || optionLabel.length === 0) {
+      continue;
+    }
+
+    inlineOptions.push({
+      key: optionKey,
+      label: optionLabel
+    });
+  }
+
+  return inlineOptions;
 }
 
 function resolveInitialOnlineState(): boolean {
@@ -1174,22 +1196,39 @@ function QuestLocationPage(): JSX.Element {
             <p className="quest-copy quest-question-prompt">{localizedQuestionPrompt}</p>
             {questionOptions.length > 0 ? (
               <div className="quest-choice-grid" data-testid="quest-choice-grid">
-                {questionOptions.map((option) => {
+                {questionOptions.map((option, optionIndex) => {
                   const normalizedAnswer = answerText.trim().toLowerCase();
                   const optionLabelNormalized = option.label.toLowerCase();
                   const isSelected =
                     normalizedAnswer === option.key || normalizedAnswer === optionLabelNormalized;
+                  const kahootVariant = optionIndex % 4;
+                  const isLastOddOption =
+                    questionOptions.length % 2 === 1 &&
+                    optionIndex === questionOptions.length - 1;
 
                   return (
                     <button
                       key={`${option.key}-${option.label}`}
                       type="button"
-                      className={`quest-choice-button${isSelected ? " is-selected" : ""}`}
+                      className={`quest-choice-button quest-choice-button--kahoot-${String(
+                        kahootVariant
+                      )}${isSelected ? " is-selected" : ""}${
+                        isLastOddOption ? " quest-choice-button--full-row" : ""
+                      }`}
                       onClick={(): void => {
                         play("tap");
                         setAnswerText(option.key);
                       }}
                     >
+                      <span className={`quest-choice-marker quest-choice-marker--kahoot-${String(kahootVariant)}`}>
+                        {kahootVariant === 0
+                          ? "▲"
+                          : kahootVariant === 1
+                            ? "◆"
+                            : kahootVariant === 2
+                              ? "●"
+                              : "■"}
+                      </span>
                       <span className="quest-choice-key">{option.key})</span> {option.label}
                     </button>
                   );
