@@ -1239,6 +1239,7 @@ function QuestLocationPage(): JSX.Element {
               <button
                 type="button"
                 className="quest-button quest-button--ghost quest-manual-answer-toggle"
+                data-testid="quest-manual-toggle"
                 onClick={(): void => {
                   play("tap");
                   setIsManualAnswerVisible((current): boolean => !current);

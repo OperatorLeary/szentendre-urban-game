@@ -36,9 +36,11 @@ export function assertCondition(condition, message) {
 }
 
 export async function waitForQuestReady(page) {
-  await page.waitForSelector("[data-testid='quest-answer-input']", {
-    timeout: 20_000
-  });
+  await page.waitForSelector(
+    "[data-testid='quest-choice-grid'], [data-testid='quest-answer-input']",
+    { timeout: 20_000 }
+  );
+  await ensureManualAnswerInput(page);
 }
 
 export async function dismissBlockingOverlays(page) {
@@ -54,6 +56,21 @@ export async function dismissBlockingOverlays(page) {
   if (await preflightContinue.isVisible().catch(() => false)) {
     await preflightContinue.click();
     await page.waitForTimeout(120);
+  }
+}
+
+export async function ensureManualAnswerInput(page) {
+  const answerInput = page.locator("[data-testid='quest-answer-input']").first();
+  if (await answerInput.isVisible().catch(() => false)) {
+    return;
+  }
+
+  const manualToggle = page.locator("[data-testid='quest-manual-toggle']").first();
+  if (await manualToggle.isVisible().catch(() => false)) {
+    await manualToggle.click();
+    await page.waitForSelector("[data-testid='quest-answer-input']", {
+      timeout: 8_000
+    });
   }
 }
 
@@ -117,6 +134,7 @@ export function extractLocationSlug(url) {
 }
 
 export async function performBypassStep(page) {
+  await ensureManualAnswerInput(page);
   await page.locator("[data-testid='quest-answer-input']").fill("teacher-bypass");
   await clickFirstVisibleWhenEnabled(page, GPS_VALIDATE_SELECTORS, 12_000);
 }
