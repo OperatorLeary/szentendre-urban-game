@@ -42,9 +42,11 @@ export async function waitForQuestReady(page) {
 }
 
 export async function dismissBlockingOverlays(page) {
-  const desktopNoticeClose = page.locator("[data-testid='desktop-notice-close']").first();
-  if (await desktopNoticeClose.isVisible().catch(() => false)) {
-    await desktopNoticeClose.click();
+  const desktopNoticeContinue = page
+    .locator("[data-testid='desktop-notice-continue']")
+    .first();
+  if (await desktopNoticeContinue.isVisible().catch(() => false)) {
+    await desktopNoticeContinue.click();
     await page.waitForTimeout(120);
   }
 
