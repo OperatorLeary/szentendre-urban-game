@@ -5,6 +5,7 @@ import {
   performBypassStep,
   readProgress,
   resolveBaseUrl,
+  waitForStepAdvance,
   waitForQuestReady
 } from "./helpers.mjs";
 
@@ -47,22 +48,15 @@ async function run() {
 
     const expectedTotal = 3;
     for (let step = 0; step < expectedTotal; step += 1) {
-      const previousUrl = page.url();
+      const beforeState = {
+        url: page.url(),
+        progress: await readProgress(page)
+      };
       await performBypassStep(page);
-      await page.waitForTimeout(350);
-
-      const isCompleted = await page.locator("[data-testid='quest-completed-state']").isVisible();
-      if (isCompleted) {
+      const outcome = await waitForStepAdvance(page, beforeState, 22_000);
+      if (outcome.completed) {
         break;
       }
-
-      await page.waitForFunction(
-        (oldUrl) => window.location.href !== oldUrl,
-        previousUrl,
-        {
-          timeout: 10_000
-        }
-      );
     }
 
     const progress = await readProgress(page);

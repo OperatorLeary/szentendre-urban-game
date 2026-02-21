@@ -54,14 +54,14 @@ jobs:
         run: |
           npm run preview -- --host 127.0.0.1 --port 4173 > /tmp/preview.log 2>&1 &
           PREVIEW_PID=$!
-          trap "kill ${PREVIEW_PID}" EXIT
+          trap "kill ${PREVIEW_PID}; echo '--- preview.log ---'; tail -n 200 /tmp/preview.log || true" EXIT
 
           for attempt in {1..45}; do
-            if curl -fsS http://127.0.0.1:4173 > /dev/null; then
+            if curl -fsS http://127.0.0.1:4173 > /dev/null 2>&1; then
               break
             fi
             sleep 2
           done
 
-          curl -fsS http://127.0.0.1:4173 > /dev/null
+          curl -fsS http://127.0.0.1:4173 > /dev/null 2>&1
           npm run test:smoke

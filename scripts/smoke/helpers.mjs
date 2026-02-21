@@ -67,6 +67,34 @@ export async function clickFirstVisible(page, selectors) {
   throw new Error(`No visible selector matched. Tried: ${selectors.join(", ")}`);
 }
 
+export async function clickFirstVisibleWhenEnabled(page, selectors, timeoutMs = 10_000) {
+  const startedAt = Date.now();
+
+  while (Date.now() - startedAt <= timeoutMs) {
+    for (const selector of selectors) {
+      const locator = page.locator(selector).first();
+      const isVisible = await locator.isVisible().catch(() => false);
+      if (!isVisible) {
+        continue;
+      }
+
+      const isEnabled = await locator.isEnabled().catch(() => false);
+      if (!isEnabled) {
+        continue;
+      }
+
+      await locator.click();
+      return selector;
+    }
+
+    await page.waitForTimeout(120);
+  }
+
+  throw new Error(
+    `No visible+enabled selector matched within ${timeoutMs}ms. Tried: ${selectors.join(", ")}`
+  );
+}
+
 export async function readProgress(page) {
   const rawText = await page.locator("[data-testid='quest-progress-ratio']").first().innerText();
   const match = rawText.match(/(\d+)\s*\/\s*(\d+)/);
@@ -88,5 +116,59 @@ export function extractLocationSlug(url) {
 
 export async function performBypassStep(page) {
   await page.locator("[data-testid='quest-answer-input']").fill("teacher-bypass");
-  await clickFirstVisible(page, GPS_VALIDATE_SELECTORS);
+  await clickFirstVisibleWhenEnabled(page, GPS_VALIDATE_SELECTORS, 12_000);
+}
+
+export async function waitForStepAdvance(page, beforeState, timeoutMs = 20_000) {
+  const startedAt = Date.now();
+
+  while (Date.now() - startedAt <= timeoutMs) {
+    const isCompleted = await page
+      .locator("[data-testid='quest-completed-state']")
+      .isVisible()
+      .catch(() => false);
+    if (isCompleted) {
+      return {
+        advanced: true,
+        completed: true,
+        reason: "completed"
+      };
+    }
+
+    const currentUrl = page.url();
+    if (currentUrl !== beforeState.url) {
+      return {
+        advanced: true,
+        completed: false,
+        reason: "url_changed"
+      };
+    }
+
+    const currentProgress = await readProgress(page).catch(() => null);
+    if (
+      currentProgress !== null &&
+      currentProgress.completed > beforeState.progress.completed
+    ) {
+      return {
+        advanced: true,
+        completed: false,
+        reason: "progress_increased"
+      };
+    }
+
+    await page.waitForTimeout(180);
+  }
+
+  const feedbackText = await page
+    .locator(".quest-feedback")
+    .first()
+    .textContent()
+    .catch(() => null);
+  const currentProgress = await readProgress(page).catch(() => null);
+
+  throw new Error(
+    `Step did not advance in ${timeoutMs}ms. feedback="${feedbackText ?? ""}" before=${JSON.stringify(
+      beforeState.progress
+    )} current=${JSON.stringify(currentProgress)} url="${page.url()}"`
+  );
 }

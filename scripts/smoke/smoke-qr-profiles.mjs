@@ -6,6 +6,7 @@ import {
   performBypassStep,
   readProgress,
   resolveBaseUrl,
+  waitForStepAdvance,
   waitForQuestReady
 } from "./helpers.mjs";
 
@@ -40,25 +41,18 @@ async function runProfileSmoke(profile, expectedTotal, options = { fullCompletio
 
     const steps = options.fullCompletion ? expectedTotal : 2;
     for (let step = 0; step < steps; step += 1) {
-      const previousUrl = page.url();
+      const beforeState = {
+        url: page.url(),
+        progress: await readProgress(page)
+      };
       await performBypassStep(page);
-      await page.waitForTimeout(350);
-
-      const isCompleted = await page.locator("[data-testid='quest-completed-state']").isVisible();
-      if (isCompleted) {
+      const outcome = await waitForStepAdvance(page, beforeState, 22_000);
+      if (outcome.completed) {
         if (!options.fullCompletion) {
           throw new Error(`[${profile}] completed unexpectedly during partial smoke.`);
         }
         break;
       }
-
-      await page.waitForFunction(
-        (oldUrl) => window.location.href !== oldUrl,
-        previousUrl,
-        {
-          timeout: 10_000
-        }
-      );
 
       const currentSlug = extractLocationSlug(page.url());
       assertCondition(currentSlug !== null, `[${profile}] unable to parse location slug from URL.`);
