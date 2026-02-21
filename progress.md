@@ -3,8 +3,7 @@ Original prompt: things I don't like currently is when theme is on dark and I ho
 - 2026-02-20: Investigated dark-theme button contrast issue. Found `.quest-button--ghost` in `src/styles/global.css` uses light text in dark mode, while the shared hover style (`.quest-button--ghost:not(:disabled):hover`) sets a near-white background, causing low contrast.
 - Plan: add dark-theme-specific hover/active styles for ghost buttons to keep background dark enough for readability.
 - 2026-02-20: Added dark-mode-specific .quest-button--ghost hover and active overrides in src/styles/global.css so interactive states stay dark and text remains readable on desktop.
-- 2026-02-20: 
-pm run build passed after CSS update. Attempted Playwright skill client verification, but it is unavailable in this environment because the playwright package is not installed.
+- 2026-02-20: `npm run build` passed after CSS update. Playwright skill-client verification was unavailable in that specific local environment.
 - 2026-02-20: Added phase 12 migration to harden alias moderation against numeric-affix bypasses (e.g. fasz67, 67fasz).
 - 2026-02-20: Implemented first-pass text-first navigation mode on quest page with optional map hint toggle (persisted in localStorage). Added HU/EN translations and layout styles.
 - 2026-02-20: Added phase 15 schema support for layered station instructions (instruction_brief*, instruction_full*) and connected it to Location entity/repository + quest navigation UI with collapsible detailed text and fallback behavior.
@@ -15,8 +14,8 @@ pm run build passed after CSS update. Attempted Playwright skill client verifica
 - 2026-02-21: Validation run for "make sure everything works and the website builds properly" completed.
 - 2026-02-21: `npm run check` passed (lint, typecheck, build). Vite production build completed and PWA assets generated without errors.
 - 2026-02-21: Runtime smoke checks passed for both dev (`npm run dev -- --host 127.0.0.1 --port 4173`) and preview (`npm run preview -- --host 127.0.0.1 --port 4174`) with HTTP 200 and expected HTML title.
-- 2026-02-21: Attempted required `develop-web-game` Playwright client run; blocked because `playwright` package is not installed in this repo/environment (`ERR_MODULE_NOT_FOUND` from `web_game_playwright_client.js`).
-- TODO: Install Playwright (`npm i -D playwright` and `npx playwright install`) if automated gameplay verification with the skill client is needed in future runs.
+- 2026-02-21: Attempted required `develop-web-game` Playwright client run; blocked by local runtime mismatch (`ERR_MODULE_NOT_FOUND` from `web_game_playwright_client.js`) in that environment.
+- TODO: On each local machine that runs smoke/tests, execute `npx playwright install` once to provision browser binaries.
 - 2026-02-21: Implemented broad UI/UX pass across app shell, home, quest, and admin.
 - 2026-02-21: Added reusable dialog accessibility hook (`useDialogA11y`) and wired it to QR scanner, bug report modal, abandon dialog, and desktop notice (focus trap, Escape close, focus restore, dialog labels, backdrop close).
 - 2026-02-21: Improved QR scanner reliability with error throttling and clearer camera guidance/error mapping (permission denied / no camera / insecure context), plus new localized copy.
@@ -26,7 +25,8 @@ pm run build passed after CSS update. Attempted Playwright skill client verifica
 - 2026-02-21: Admin editor workflow upgrades: dirty-only filter, publish-all-dirty action, inline confirmation panel replacing repetitive `window.confirm`, and summary feedback for batch publish.
 - 2026-02-21: Geolocation resilience pass: retain last known snapshot on GPS request failures and surface live GPS-fix age/stale status in quest UI.
 - 2026-02-21: `npm run check` passes after changes (lint + typecheck + build).
-- 2026-02-21: Re-attempted Playwright skill client validation; still blocked by missing `playwright` dependency (`ERR_MODULE_NOT_FOUND`).
+- 2026-02-21: Re-attempted Playwright skill client validation in another local environment; still blocked by environment/runtime mismatch.
+- 2026-02-21: Documentation cleanup: repository-level Playwright support is present (`playwright` in `package.json`, Chromium install in `.github/workflows/ci.yml`); earlier "missing package" wording was stale.
 - 2026-02-21: Added deterministic release QA artifacts (`docs/qa/release-checklist.md`, `docs/qa/release-gate.md`, `docs/supabase_route_profile_audit.sql`) and linked them from `README.md` + `docs/project-context.md`.
 - Scope: docs QA/release process and route-profile SQL integrity checks.
 - Why: make preview/staging go/no-go reproducible and remove ambiguity from release decisions.
