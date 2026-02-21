@@ -17,6 +17,10 @@ const hu = {
   "sound.on": "BE",
   "sound.off": "KI",
   "sound.toggleAriaLabel": "Hanghatások kapcsoló",
+  "settings.title": "Beállítások",
+  "settings.copy": "Itt módosíthatod a témát és a hanghatásokat.",
+  "settings.openAriaLabel": "Beállítások megnyitása",
+  "settings.closeAriaLabel": "Beállítások bezárása",
   "home.heroCopy":
     "Válassz útvonalat vagy indíts egy állomáson leolvasott QR-kóddal. Egy eszközön egyszerre csak egy aktív játék futhat.",
   "home.playerAliasLabel": "Játékosnév",
@@ -272,6 +276,10 @@ const en: Record<TranslationKey, string> = {
   "sound.on": "ON",
   "sound.off": "OFF",
   "sound.toggleAriaLabel": "Sound effects toggle",
+  "settings.title": "Settings",
+  "settings.copy": "Adjust theme and sound effects here.",
+  "settings.openAriaLabel": "Open settings",
+  "settings.closeAriaLabel": "Close settings",
   "home.heroCopy":
     "Pick a route or start from a scanned station QR code. Only one active run is allowed per device.",
   "home.playerAliasLabel": "Player alias",
