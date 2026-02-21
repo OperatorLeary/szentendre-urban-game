@@ -70,7 +70,22 @@ Notes:
 ## Current Open Items
 - End-to-end manual QA for "scan any station" across all three route profiles.
 - Final UX polish pass for onboarding clarity and route-duration expectation text.
-- Optional: add deterministic QA checklist document for release testing.
+- Keep CI smoke secrets configured on all active GitHub environments.
+- Keep release evidence snapshots (SQL + CI + manual checklist) attached per release.
+
+## Release Gate
+- SQL audits:
+  - `docs/supabase_health_check.sql`
+  - `docs/supabase_route_profile_audit.sql`
+- CI required checks:
+  - lint
+  - typecheck
+  - build
+  - smoke browser checks
+- Manual gate:
+  - `docs/qa/release-checklist.md`
+- Final decision matrix:
+  - `docs/qa/release-gate.md`
 
 ## Session Update Template (Minimal)
 Use this in `progress.md` for new entries:

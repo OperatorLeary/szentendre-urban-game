@@ -55,3 +55,30 @@ See `docs/deployment/cloudflare-pages.md` for details.
 ## Project Context and Handoff
 - High-level project brief and decision log anchor: `docs/project-context.md`
 - Chronological implementation notes: `progress.md`
+
+## QA and Audit
+- Release checklist: `docs/qa/release-checklist.md`
+- Release gate matrix: `docs/qa/release-gate.md`
+- Supabase health audit (read-only): `docs/supabase_health_check.sql`
+- Route/profile audit (read-only): `docs/supabase_route_profile_audit.sql`
+
+## Smoke Automation
+- Core flow smoke: `npm run test:smoke:core`
+- QR profile smoke: `npm run test:smoke:qr-profiles`
+- Combined smoke: `npm run test:smoke`
+
+Recommended local run order:
+1. `npm run build`
+2. `npm run preview -- --host 127.0.0.1 --port 4173`
+3. In a second terminal: `npm run test:smoke`
+
+Smoke scripts can be configured with:
+- `SMOKE_BASE_URL` (default: `http://127.0.0.1:4173`)
+- `SMOKE_QR_ROUTE_SLUG` (default: `long`)
+- `SMOKE_QR_START_SLUG` (default: `petzelt-jozsef-tabla`)
+- `SMOKE_CORE_FALLBACK_PATH` (default: `/r/long/l/petzelt-jozsef-tabla?entry=qr&profile=short`)
+
+CI smoke in `.github/workflows/ci.yml` expects staging secrets:
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_ANON_KEY`
+- Optional: `VITE_DEFAULT_ROUTE_SLUG`, `VITE_DEVICE_ID_STORAGE_KEY`

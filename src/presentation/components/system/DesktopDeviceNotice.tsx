@@ -112,6 +112,7 @@ export function DesktopDeviceNotice(props: DesktopDeviceNoticeProps): JSX.Elemen
         <button
           type="button"
           className="desktop-device-notice-close"
+          data-testid="desktop-notice-close"
           onClick={dismissNotice}
           aria-label={t("desktopNotice.close")}
         >
@@ -124,7 +125,12 @@ export function DesktopDeviceNotice(props: DesktopDeviceNoticeProps): JSX.Elemen
           {t("desktopNotice.copy")}
         </p>
         <div className="desktop-device-notice-actions">
-          <button type="button" className="quest-button" onClick={dismissNotice}>
+          <button
+            type="button"
+            className="quest-button"
+            data-testid="desktop-notice-continue"
+            onClick={dismissNotice}
+          >
             {t("desktopNotice.continueHere")}
           </button>
         </div>

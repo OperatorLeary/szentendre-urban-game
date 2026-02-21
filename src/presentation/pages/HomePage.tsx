@@ -438,6 +438,7 @@ function HomePage(): JSX.Element {
               <button
                 className="quest-button quest-button--ghost"
                 type="button"
+                data-testid="preflight-enable-gps"
                 onClick={(): void => {
                   play("tap");
                   void requestGpsPermission();
@@ -455,6 +456,7 @@ function HomePage(): JSX.Element {
               <button
                 className="quest-button quest-button--ghost"
                 type="button"
+                data-testid="preflight-enable-camera"
                 onClick={(): void => {
                   play("tap");
                   void requestCameraPermission();
@@ -469,6 +471,7 @@ function HomePage(): JSX.Element {
             <button
               className="quest-button"
               type="button"
+              data-testid="preflight-continue"
               onClick={(): void => {
                 play("tap");
                 setStoredPreflightDismissed(true);
@@ -526,10 +529,14 @@ function HomePage(): JSX.Element {
             );
 
             return (
-              <article key={route.id} className="route-card">
+              <article
+                key={route.id}
+                className="route-card"
+                data-testid={`route-card-${route.slug}`}
+              >
                 <h3 className="route-title">{routeDisplay.name}</h3>
                 <p className="route-copy">{routeDisplay.description}</p>
-                <p className="route-meta">
+                <p className="route-meta" data-testid={`route-meta-${route.slug}`}>
                   {t("home.routeMeta", {
                     stations: String(route.locationCount),
                     minutes: String(route.estimatedDurationMinutes)
@@ -538,6 +545,7 @@ function HomePage(): JSX.Element {
                 <button
                   className="quest-button"
                   type="button"
+                  data-testid={`route-start-${route.slug}`}
                   onClick={(): void => {
                     startRoute(route);
                   }}
@@ -554,7 +562,12 @@ function HomePage(): JSX.Element {
       <section className="quest-panel">
         <h2 className="quest-panel-title">{t("home.qrStartTitle")}</h2>
         <p className="quest-field-label">{t("home.qrProfileLabel")}</p>
-        <div className="quest-navigation-toggle" role="radiogroup" aria-label={t("home.qrProfileLabel")}>
+        <div
+          className="quest-navigation-toggle"
+          role="radiogroup"
+          aria-label={t("home.qrProfileLabel")}
+          data-testid="qr-profile-selector"
+        >
           {QR_ROUTE_PROFILES.map((profile: QrRouteProfile): JSX.Element => (
             <button
               key={profile}
@@ -562,6 +575,7 @@ function HomePage(): JSX.Element {
                 selectedQrProfile === profile ? "theme-switcher-button--active" : ""
               }`}
               type="button"
+              data-testid={`qr-profile-${profile}`}
               role="radio"
               aria-checked={selectedQrProfile === profile}
               onClick={(): void => {
@@ -577,6 +591,7 @@ function HomePage(): JSX.Element {
           <button
             className="quest-button quest-button--ghost"
             type="button"
+            data-testid="qr-scan-toggle"
             onClick={(): void => {
               play("tap");
               setScannerErrorMessage(null);

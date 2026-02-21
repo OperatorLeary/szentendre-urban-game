@@ -962,7 +962,7 @@ function QuestLocationPage(): JSX.Element {
             </button>
           ) : null}
         </div>
-        <p className="quest-muted">
+        <p className="quest-muted" data-testid="quest-progress-ratio">
           {t("quest.progress")}: {progressRatio} ({progressPercentage}%)
         </p>
         <div
@@ -978,7 +978,7 @@ function QuestLocationPage(): JSX.Element {
             style={{ width: `${String(progressPercentage)}%` }}
           />
         </div>
-        <p className="quest-muted">
+        <p className="quest-muted" data-testid="quest-station-label">
           {t("quest.station")} {activeLocation.sequenceNumber}: {activeLocation.name}
         </p>
         {!isOnline ? (
@@ -1047,7 +1047,9 @@ function QuestLocationPage(): JSX.Element {
       <section className="quest-panel">
         {isRunCompleted ? (
           <>
-            <p className="quest-summary-badge">{t("quest.summaryFinaleBadge")}</p>
+            <p className="quest-summary-badge" data-testid="quest-completed-state">
+              {t("quest.summaryFinaleBadge")}
+            </p>
             <h2 className="quest-panel-title">{t("quest.summaryTitle")}</h2>
             <p className="quest-copy">
               {t("quest.summarySubtitle", { routeName: localizedRouteTitle })}
@@ -1114,6 +1116,7 @@ function QuestLocationPage(): JSX.Element {
               <span className="quest-field-label">{t("quest.yourAnswerLabel")}</span>
               <input
                 className="quest-input"
+                data-testid="quest-answer-input"
                 value={answerText}
                 onChange={(event: ChangeEvent<HTMLInputElement>): void => {
                   setAnswerText(event.target.value);
@@ -1136,6 +1139,7 @@ function QuestLocationPage(): JSX.Element {
               <button
                 className="quest-button"
                 type="button"
+                data-testid="validate-gps-button-desktop"
                 disabled={!hasAnswer || locationValidation.isSubmitting || geolocation.isLoading}
                 onClick={(): void => {
                   play("tap");
@@ -1147,6 +1151,7 @@ function QuestLocationPage(): JSX.Element {
               <button
                 className="quest-button quest-button--ghost"
                 type="button"
+                data-testid="validate-qr-button-desktop"
                 disabled={!hasAnswer || locationValidation.isSubmitting}
                 onClick={(): void => {
                   play("tap");
@@ -1160,6 +1165,7 @@ function QuestLocationPage(): JSX.Element {
               <button
                 className="quest-button"
                 type="button"
+                data-testid="validate-gps-button-mobile"
                 disabled={!hasAnswer || locationValidation.isSubmitting || geolocation.isLoading}
                 onClick={(): void => {
                   play("tap");
@@ -1171,6 +1177,7 @@ function QuestLocationPage(): JSX.Element {
               <button
                 className="quest-button quest-button--ghost"
                 type="button"
+                data-testid="validate-qr-button-mobile"
                 disabled={!hasAnswer || locationValidation.isSubmitting}
                 onClick={(): void => {
                   play("tap");

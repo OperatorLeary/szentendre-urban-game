@@ -27,3 +27,18 @@ pm run build passed after CSS update. Attempted Playwright skill client verifica
 - 2026-02-21: Geolocation resilience pass: retain last known snapshot on GPS request failures and surface live GPS-fix age/stale status in quest UI.
 - 2026-02-21: `npm run check` passes after changes (lint + typecheck + build).
 - 2026-02-21: Re-attempted Playwright skill client validation; still blocked by missing `playwright` dependency (`ERR_MODULE_NOT_FOUND`).
+- 2026-02-21: Added deterministic release QA artifacts (`docs/qa/release-checklist.md`, `docs/qa/release-gate.md`, `docs/supabase_route_profile_audit.sql`) and linked them from `README.md` + `docs/project-context.md`.
+- Scope: docs QA/release process and route-profile SQL integrity checks.
+- Why: make preview/staging go/no-go reproducible and remove ambiguity from release decisions.
+- Validation: `npm run check` passed.
+- Follow-up: execute SQL audits in staging and attach snapshots to release notes.
+- 2026-02-21: Added CI hardening (`.github/workflows/ci.yml`) with required staging secrets validation, unit test run, Chromium install, and Playwright smoke gate against local preview.
+- Scope: CI required checks and smoke automation scripts.
+- Why: block regressions in QR/profile/session progression before merge.
+- Validation: `npm run lint`, `npm run typecheck`, `npm run test:unit`, `npm run build` passed locally.
+- Follow-up: configure GitHub secrets (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`) before enforcing required checks.
+- 2026-02-21: Added targeted runtime unit tests for `GameSessionService`, `ResolveQrEntryRouteUseCase`, and `EnsureRunSessionUseCase`, including wrap-around progression and `entry=qr` restart behavior.
+- Scope: `src/**/*.test.ts`, shared test fixtures, and vitest config.
+- Why: protect critical route-generation invariants and QR-start restart logic.
+- Validation: `npm run test:unit` passed (9 tests).
+- Follow-up: local smoke (`npm run test:smoke`) requires runtime env (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`).

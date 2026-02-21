@@ -10,6 +10,10 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "typecheck": "tsc --noEmit",
+    "test:unit": "vitest run",
+    "test:smoke:core": "node scripts/smoke/smoke-core-flow.mjs",
+    "test:smoke:qr-profiles": "node scripts/smoke/smoke-qr-profiles.mjs",
+    "test:smoke": "npm run test:smoke:core && npm run test:smoke:qr-profiles",
     "check": "npm run lint && npm run typecheck && npm run build"
   },
   "dependencies": {
@@ -37,6 +41,7 @@
     "typescript": "~5.7.2",
     "typescript-eslint": "^8.18.1",
     "vite": "^6.0.5",
+    "vitest": "^3.2.4",
     "vite-plugin-pwa": "^0.21.2"
   }
 }

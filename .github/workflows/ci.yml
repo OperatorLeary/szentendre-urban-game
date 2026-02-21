@@ -9,6 +9,11 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+      VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+      VITE_DEFAULT_ROUTE_SLUG: ${{ secrets.VITE_DEFAULT_ROUTE_SLUG }}
+      VITE_DEVICE_ID_STORAGE_KEY: ${{ secrets.VITE_DEVICE_ID_STORAGE_KEY }}
 
     steps:
       - name: Checkout
@@ -21,7 +26,12 @@ jobs:
           cache: "npm"
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
+
+      - name: Validate staging secrets
+        run: |
+          test -n "${VITE_SUPABASE_URL}" || (echo "Missing secret: VITE_SUPABASE_URL" && exit 1)
+          test -n "${VITE_SUPABASE_ANON_KEY}" || (echo "Missing secret: VITE_SUPABASE_ANON_KEY" && exit 1)
 
       - name: Lint
         run: npm run lint
@@ -29,5 +39,29 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      - name: Unit tests
+        run: npm run test:unit
+
       - name: Build
         run: npm run build
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Smoke tests
+        env:
+          SMOKE_BASE_URL: http://127.0.0.1:4173
+        run: |
+          npm run preview -- --host 127.0.0.1 --port 4173 > /tmp/preview.log 2>&1 &
+          PREVIEW_PID=$!
+          trap "kill ${PREVIEW_PID}" EXIT
+
+          for attempt in {1..45}; do
+            if curl -fsS http://127.0.0.1:4173 > /dev/null; then
+              break
+            fi
+            sleep 2
+          done
+
+          curl -fsS http://127.0.0.1:4173 > /dev/null
+          npm run test:smoke
