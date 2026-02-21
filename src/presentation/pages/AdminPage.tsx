@@ -146,6 +146,10 @@ function AdminPage(): JSX.Element {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [savingLocationId, setSavingLocationId] = useState<string | null>(null);
+  const [dirtyLocationIds, setDirtyLocationIds] = useState<readonly string[]>([]);
+  const [previewLocationId, setPreviewLocationId] = useState<string | null>(null);
+
+  const hasUnsavedChanges: boolean = dirtyLocationIds.length > 0;
 
   useEffect(() => {
     let isCancelled = false;
@@ -180,6 +184,21 @@ function AdminPage(): JSX.Element {
   }, [supabase.auth]);
 
   useEffect(() => {
+    if (!hasUnsavedChanges) {
+      return;
+    }
+
+    const handleBeforeUnload = (event: BeforeUnloadEvent): void => {
+      event.preventDefault();
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return (): void => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [hasUnsavedChanges]);
+
+  useEffect(() => {
     let isCancelled = false;
 
     const verifyAdminAccess = async (): Promise<void> => {
@@ -188,6 +207,8 @@ function AdminPage(): JSX.Element {
         setRoutes([]);
         setStations([]);
         setSelectedRouteId("");
+        setDirtyLocationIds([]);
+        setPreviewLocationId(null);
         return;
       }
 
@@ -268,6 +289,8 @@ function AdminPage(): JSX.Element {
 
         return nextRoutes[0]?.id ?? "";
       });
+      setDirtyLocationIds([]);
+      setPreviewLocationId(null);
       setIsRoutesLoading(false);
     };
 
@@ -284,6 +307,8 @@ function AdminPage(): JSX.Element {
     const loadStations = async (): Promise<void> => {
       if (!isAdmin || selectedRouteId.length === 0) {
         setStations([]);
+        setDirtyLocationIds([]);
+        setPreviewLocationId(null);
         return;
       }
 
@@ -311,6 +336,8 @@ function AdminPage(): JSX.Element {
         routeLocations as readonly RouteLocationListRow[];
       if (rows.length === 0) {
         setStations([]);
+        setDirtyLocationIds([]);
+        setPreviewLocationId(null);
         setIsStationsLoading(false);
         return;
       }
@@ -409,6 +436,8 @@ function AdminPage(): JSX.Element {
         .filter((row: EditableStationRow | null): row is EditableStationRow => row !== null);
 
       setStations(editorRows);
+      setDirtyLocationIds([]);
+      setPreviewLocationId(null);
       setIsStationsLoading(false);
     };
 
@@ -449,16 +478,22 @@ function AdminPage(): JSX.Element {
   }, [magicEmail, play, supabase.auth, t]);
 
   const handleSignOut = useCallback(async (): Promise<void> => {
+    if (hasUnsavedChanges && !window.confirm(t("admin.unsavedSignOutConfirm"))) {
+      return;
+    }
+
     await supabase.auth.signOut();
     setSession(null);
     setIsAdmin(false);
     setRoutes([]);
     setStations([]);
     setSelectedRouteId("");
+    setDirtyLocationIds([]);
+    setPreviewLocationId(null);
     setSaveError(null);
     setSaveMessage(null);
     play("tap");
-  }, [play, supabase.auth]);
+  }, [hasUnsavedChanges, play, supabase.auth, t]);
 
   const updateStationField = useCallback(
     (locationId: string, field: StationFieldKey, value: string): void => {
@@ -467,15 +502,43 @@ function AdminPage(): JSX.Element {
           row.locationId === locationId ? { ...row, [field]: value } : row
         )
       );
+      setDirtyLocationIds((previousIds: readonly string[]): readonly string[] => {
+        if (previousIds.includes(locationId)) {
+          return previousIds;
+        }
+
+        return [...previousIds, locationId];
+      });
       setSaveMessage(null);
       setSaveError(null);
     },
     []
   );
 
+  const handleRouteSelectionChange = useCallback(
+    (nextRouteId: string): void => {
+      if (nextRouteId === selectedRouteId) {
+        return;
+      }
+
+      if (hasUnsavedChanges && !window.confirm(t("admin.unsavedRouteChangeConfirm"))) {
+        return;
+      }
+
+      setSelectedRouteId(nextRouteId);
+      setDirtyLocationIds([]);
+      setPreviewLocationId(null);
+    },
+    [hasUnsavedChanges, selectedRouteId, t]
+  );
+
   const handleSaveStation = useCallback(
     async (row: EditableStationRow): Promise<void> => {
       if (selectedRouteId.length === 0) {
+        return;
+      }
+
+      if (!window.confirm(t("admin.publishConfirm"))) {
         return;
       }
 
@@ -514,6 +577,9 @@ function AdminPage(): JSX.Element {
         t("admin.stationSaved", {
           station: `${String(row.sequenceIndex)}. ${row.locationName}`
         })
+      );
+      setDirtyLocationIds((previousIds: readonly string[]): readonly string[] =>
+        previousIds.filter((locationId: string): boolean => locationId !== row.locationId)
       );
       setSavingLocationId(null);
       play("success");
@@ -636,7 +702,7 @@ function AdminPage(): JSX.Element {
             className="quest-input"
             value={selectedRouteId}
             onChange={(event: ChangeEvent<HTMLSelectElement>): void => {
-              setSelectedRouteId(event.target.value);
+              handleRouteSelectionChange(event.target.value);
             }}
           >
             {routes.map((route: RouteOption): JSX.Element => (
@@ -652,6 +718,11 @@ function AdminPage(): JSX.Element {
             {t("admin.selectedRoute")}: {localizeRouteName(selectedRoute.slug, selectedRoute.name, t)}
           </p>
         ) : null}
+        {hasUnsavedChanges ? (
+          <p className="quest-feedback">
+            {t("admin.unsavedChangesCount", { count: String(dirtyLocationIds.length) })}
+          </p>
+        ) : null}
         {saveMessage !== null ? <p className="quest-feedback">{saveMessage}</p> : null}
         {saveError !== null ? <p className="quest-error">{saveError}</p> : null}
       </section>
@@ -663,118 +734,154 @@ function AdminPage(): JSX.Element {
           <p className="quest-muted">{t("admin.noStations")}</p>
         ) : null}
 
-        {stations.map((station: EditableStationRow): JSX.Element => (
-          <article key={station.locationId} className="admin-station-card">
-            <h3 className="route-title">
-              {String(station.sequenceIndex)}. {station.locationName}
-            </h3>
-            <p className="quest-muted">/{station.locationSlug}</p>
+        {stations.map((station: EditableStationRow): JSX.Element => {
+          const isDirty: boolean = dirtyLocationIds.includes(station.locationId);
+          const isPreviewVisible: boolean = previewLocationId === station.locationId;
 
-            <label className="quest-field">
-              <span className="quest-field-label">{t("admin.field.questionPrompt")}</span>
-              <input
-                className="quest-input"
-                value={station.questionPrompt}
-                onChange={(event: ChangeEvent<HTMLInputElement>): void => {
-                  updateStationField(station.locationId, "questionPrompt", event.target.value);
-                }}
-              />
-            </label>
+          return (
+            <article key={station.locationId} className="admin-station-card">
+              <h3 className="route-title">
+                {String(station.sequenceIndex)}. {station.locationName}
+                {isDirty ? (
+                  <span className="admin-dirty-pill">{t("admin.dirtyTag")}</span>
+                ) : null}
+              </h3>
+              <p className="quest-muted">/{station.locationSlug}</p>
 
-            <label className="quest-field">
-              <span className="quest-field-label">{t("admin.field.questionPromptHu")}</span>
-              <input
-                className="quest-input"
-                value={station.questionPromptHu}
-                onChange={(event: ChangeEvent<HTMLInputElement>): void => {
-                  updateStationField(station.locationId, "questionPromptHu", event.target.value);
-                }}
-              />
-            </label>
+              <label className="quest-field">
+                <span className="quest-field-label">{t("admin.field.questionPrompt")}</span>
+                <input
+                  className="quest-input"
+                  value={station.questionPrompt}
+                  onChange={(event: ChangeEvent<HTMLInputElement>): void => {
+                    updateStationField(station.locationId, "questionPrompt", event.target.value);
+                  }}
+                />
+              </label>
 
-            <label className="quest-field">
-              <span className="quest-field-label">{t("admin.field.instructionBrief")}</span>
-              <textarea
-                className="bug-report-textarea"
-                value={station.instructionBrief}
-                onChange={(event: ChangeEvent<HTMLTextAreaElement>): void => {
-                  updateStationField(station.locationId, "instructionBrief", event.target.value);
-                }}
-              />
-            </label>
+              <label className="quest-field">
+                <span className="quest-field-label">{t("admin.field.questionPromptHu")}</span>
+                <input
+                  className="quest-input"
+                  value={station.questionPromptHu}
+                  onChange={(event: ChangeEvent<HTMLInputElement>): void => {
+                    updateStationField(station.locationId, "questionPromptHu", event.target.value);
+                  }}
+                />
+              </label>
 
-            <label className="quest-field">
-              <span className="quest-field-label">{t("admin.field.instructionBriefHu")}</span>
-              <textarea
-                className="bug-report-textarea"
-                value={station.instructionBriefHu}
-                onChange={(event: ChangeEvent<HTMLTextAreaElement>): void => {
-                  updateStationField(station.locationId, "instructionBriefHu", event.target.value);
-                }}
-              />
-            </label>
+              <label className="quest-field">
+                <span className="quest-field-label">{t("admin.field.instructionBrief")}</span>
+                <textarea
+                  className="bug-report-textarea"
+                  value={station.instructionBrief}
+                  onChange={(event: ChangeEvent<HTMLTextAreaElement>): void => {
+                    updateStationField(station.locationId, "instructionBrief", event.target.value);
+                  }}
+                />
+              </label>
 
-            <label className="quest-field">
-              <span className="quest-field-label">{t("admin.field.instructionFull")}</span>
-              <textarea
-                className="bug-report-textarea"
-                value={station.instructionFull}
-                onChange={(event: ChangeEvent<HTMLTextAreaElement>): void => {
-                  updateStationField(station.locationId, "instructionFull", event.target.value);
-                }}
-              />
-            </label>
+              <label className="quest-field">
+                <span className="quest-field-label">{t("admin.field.instructionBriefHu")}</span>
+                <textarea
+                  className="bug-report-textarea"
+                  value={station.instructionBriefHu}
+                  onChange={(event: ChangeEvent<HTMLTextAreaElement>): void => {
+                    updateStationField(station.locationId, "instructionBriefHu", event.target.value);
+                  }}
+                />
+              </label>
 
-            <label className="quest-field">
-              <span className="quest-field-label">{t("admin.field.instructionFullHu")}</span>
-              <textarea
-                className="bug-report-textarea"
-                value={station.instructionFullHu}
-                onChange={(event: ChangeEvent<HTMLTextAreaElement>): void => {
-                  updateStationField(station.locationId, "instructionFullHu", event.target.value);
-                }}
-              />
-            </label>
+              <label className="quest-field">
+                <span className="quest-field-label">{t("admin.field.instructionFull")}</span>
+                <textarea
+                  className="bug-report-textarea"
+                  value={station.instructionFull}
+                  onChange={(event: ChangeEvent<HTMLTextAreaElement>): void => {
+                    updateStationField(station.locationId, "instructionFull", event.target.value);
+                  }}
+                />
+              </label>
 
-            <label className="quest-field">
-              <span className="quest-field-label">{t("admin.field.expectedAnswer")}</span>
-              <input
-                className="quest-input"
-                value={station.expectedAnswer}
-                onChange={(event: ChangeEvent<HTMLInputElement>): void => {
-                  updateStationField(station.locationId, "expectedAnswer", event.target.value);
-                }}
-              />
-            </label>
+              <label className="quest-field">
+                <span className="quest-field-label">{t("admin.field.instructionFullHu")}</span>
+                <textarea
+                  className="bug-report-textarea"
+                  value={station.instructionFullHu}
+                  onChange={(event: ChangeEvent<HTMLTextAreaElement>): void => {
+                    updateStationField(station.locationId, "instructionFullHu", event.target.value);
+                  }}
+                />
+              </label>
 
-            <label className="quest-field">
-              <span className="quest-field-label">{t("admin.field.expectedAnswers")}</span>
-              <input
-                className="quest-input"
-                value={station.expectedAnswersText}
-                onChange={(event: ChangeEvent<HTMLInputElement>): void => {
-                  updateStationField(station.locationId, "expectedAnswersText", event.target.value);
-                }}
-              />
-            </label>
+              <label className="quest-field">
+                <span className="quest-field-label">{t("admin.field.expectedAnswer")}</span>
+                <input
+                  className="quest-input"
+                  value={station.expectedAnswer}
+                  onChange={(event: ChangeEvent<HTMLInputElement>): void => {
+                    updateStationField(station.locationId, "expectedAnswer", event.target.value);
+                  }}
+                />
+              </label>
 
-            <div className="quest-actions">
-              <button
-                className="quest-button"
-                type="button"
-                disabled={savingLocationId === station.locationId}
-                onClick={(): void => {
-                  play("tap");
-                  void handleSaveStation(station);
-                }}
-              >
-                {savingLocationId === station.locationId
-                  ? t("admin.savingStation")
-                  : t("admin.saveStation")}
-              </button>
-            </div>
-          </article>
-        ))}
+              <label className="quest-field">
+                <span className="quest-field-label">{t("admin.field.expectedAnswers")}</span>
+                <input
+                  className="quest-input"
+                  value={station.expectedAnswersText}
+                  onChange={(event: ChangeEvent<HTMLInputElement>): void => {
+                    updateStationField(station.locationId, "expectedAnswersText", event.target.value);
+                  }}
+                />
+              </label>
+
+              {isPreviewVisible ? (
+                <article className="admin-preview-panel" aria-live="polite">
+                  <p className="admin-preview-label">{t("admin.previewTitle")}</p>
+                  <p className="quest-copy">
+                    {station.questionPromptHu.trim().length > 0
+                      ? station.questionPromptHu
+                      : station.questionPrompt}
+                  </p>
+                  <p className="quest-muted">
+                    {station.instructionBriefHu.trim().length > 0
+                      ? station.instructionBriefHu
+                      : station.instructionBrief}
+                  </p>
+                </article>
+              ) : null}
+
+              <div className="quest-actions">
+                <button
+                  className="quest-button quest-button--ghost"
+                  type="button"
+                  onClick={(): void => {
+                    play("tap");
+                    setPreviewLocationId((previousLocationId: string | null): string | null =>
+                      previousLocationId === station.locationId ? null : station.locationId
+                    );
+                  }}
+                >
+                  {isPreviewVisible ? t("admin.hidePreview") : t("admin.showPreview")}
+                </button>
+                <button
+                  className="quest-button"
+                  type="button"
+                  disabled={savingLocationId === station.locationId}
+                  onClick={(): void => {
+                    play("tap");
+                    void handleSaveStation(station);
+                  }}
+                >
+                  {savingLocationId === station.locationId
+                    ? t("admin.savingStation")
+                    : t("admin.publishStation")}
+                </button>
+              </div>
+            </article>
+          );
+        })}
       </section>
     </main>
   );

@@ -1,6 +1,7 @@
 import {
   useCallback,
   useEffect,
+  useMemo,
   useState,
   type ChangeEvent,
   type JSX
@@ -24,6 +25,16 @@ import {
 import { toRouteLocationPath } from "@/shared/config/routes";
 import { parseRouteLocationPayload } from "@/shared/utils/validation-guard";
 
+type PermissionProbeState =
+  | "unknown"
+  | "prompt"
+  | "granted"
+  | "denied"
+  | "unsupported"
+  | "checking";
+
+const PREFLIGHT_DISMISSED_STORAGE_KEY = "szentendre-city-quest-permission-preflight-dismissed";
+
 function getStoredAlias(): string {
   if (typeof window === "undefined") {
     return DEFAULT_PLAYER_ALIAS;
@@ -43,6 +54,42 @@ function setStoredAlias(alias: string): void {
   }
 
   window.localStorage.setItem(PLAYER_ALIAS_STORAGE_KEY, alias.trim());
+}
+
+function getStoredPreflightDismissed(): boolean {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  return window.localStorage.getItem(PREFLIGHT_DISMISSED_STORAGE_KEY) === "1";
+}
+
+function setStoredPreflightDismissed(value: boolean): void {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.localStorage.setItem(PREFLIGHT_DISMISSED_STORAGE_KEY, value ? "1" : "0");
+}
+
+function toPermissionStatusLabel(
+  status: PermissionProbeState,
+  t: ReturnType<typeof useLanguage>["t"]
+): string {
+  switch (status) {
+    case "granted":
+      return t("home.permissionStatusGranted");
+    case "denied":
+      return t("home.permissionStatusDenied");
+    case "prompt":
+      return t("home.permissionStatusPrompt");
+    case "checking":
+      return t("home.permissionStatusChecking");
+    case "unsupported":
+      return t("home.permissionStatusUnsupported");
+    default:
+      return t("home.permissionStatusUnknown");
+  }
 }
 
 function getAliasValidationMessage(
@@ -72,6 +119,54 @@ function HomePage(): JSX.Element {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [playerAlias, setPlayerAlias] = useState<string>(getStoredAlias());
   const [isScannerVisible, setIsScannerVisible] = useState<boolean>(false);
+  const [isPreflightDismissed, setIsPreflightDismissed] = useState<boolean>(
+    getStoredPreflightDismissed
+  );
+  const [gpsPermission, setGpsPermission] = useState<PermissionProbeState>("unknown");
+  const [cameraPermission, setCameraPermission] = useState<PermissionProbeState>("unknown");
+
+  const probePermissions = useCallback(async (): Promise<void> => {
+    if (typeof navigator === "undefined") {
+      setGpsPermission("unsupported");
+      setCameraPermission("unsupported");
+      return;
+    }
+
+    if (!("geolocation" in navigator)) {
+      setGpsPermission("unsupported");
+    } else if (!("permissions" in navigator)) {
+      setGpsPermission("unknown");
+    } else {
+      try {
+        const result = await navigator.permissions.query({ name: "geolocation" });
+        setGpsPermission(result.state);
+      } catch {
+        setGpsPermission("unknown");
+      }
+    }
+
+    if (
+      !("mediaDevices" in navigator) ||
+      typeof navigator.mediaDevices.getUserMedia !== "function"
+    ) {
+      setCameraPermission("unsupported");
+    } else if (!("permissions" in navigator)) {
+      setCameraPermission("unknown");
+    } else {
+      try {
+        const result = await navigator.permissions.query({
+          name: "camera" as PermissionName
+        });
+        setCameraPermission(result.state);
+      } catch {
+        setCameraPermission("unknown");
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    void probePermissions();
+  }, [probePermissions]);
 
   useEffect(() => {
     let isCancelled = false;
@@ -182,8 +277,136 @@ function HomePage(): JSX.Element {
     [navigate, play, playerAlias, t]
   );
 
+  const requestGpsPermission = useCallback(async (): Promise<void> => {
+    if (typeof navigator === "undefined" || !("geolocation" in navigator)) {
+      setGpsPermission("unsupported");
+      return;
+    }
+
+    setGpsPermission("checking");
+
+    await new Promise<void>((resolve) => {
+      navigator.geolocation.getCurrentPosition(
+        (): void => {
+          setGpsPermission("granted");
+          resolve();
+        },
+        (): void => {
+          setGpsPermission("denied");
+          resolve();
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 12_000,
+          maximumAge: 0
+        }
+      );
+    });
+
+    await probePermissions();
+  }, [probePermissions]);
+
+  const requestCameraPermission = useCallback(async (): Promise<void> => {
+    if (
+      typeof navigator === "undefined" ||
+      !("mediaDevices" in navigator) ||
+      typeof navigator.mediaDevices.getUserMedia !== "function"
+    ) {
+      setCameraPermission("unsupported");
+      return;
+    }
+
+    setCameraPermission("checking");
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: "environment"
+        }
+      });
+
+      stream.getTracks().forEach((track: MediaStreamTrack): void => {
+        track.stop();
+      });
+
+      setCameraPermission("granted");
+    } catch {
+      setCameraPermission("denied");
+    }
+
+    await probePermissions();
+  }, [probePermissions]);
+
+  const showPermissionPreflight = useMemo((): boolean => {
+    if (isPreflightDismissed) {
+      return false;
+    }
+
+    const gpsReady = gpsPermission === "granted" || gpsPermission === "unsupported";
+    const cameraReady =
+      cameraPermission === "granted" || cameraPermission === "unsupported";
+
+    return !(gpsReady && cameraReady);
+  }, [cameraPermission, gpsPermission, isPreflightDismissed]);
+
   return (
     <main className="quest-shell">
+      {showPermissionPreflight ? (
+        <section className="quest-panel preflight-panel">
+          <h2 className="quest-panel-title">{t("home.preflightTitle")}</h2>
+          <p className="quest-copy">{t("home.preflightCopy")}</p>
+          <div className="preflight-status-grid" role="list">
+            <article className="preflight-status-card" role="listitem">
+              <p className="preflight-status-title">{t("home.preflightGpsTitle")}</p>
+              <p className="preflight-status-value">
+                {toPermissionStatusLabel(gpsPermission, t)}
+              </p>
+              <button
+                className="quest-button quest-button--ghost"
+                type="button"
+                onClick={(): void => {
+                  play("tap");
+                  void requestGpsPermission();
+                }}
+                disabled={gpsPermission === "checking"}
+              >
+                {t("home.preflightEnableGps")}
+              </button>
+            </article>
+            <article className="preflight-status-card" role="listitem">
+              <p className="preflight-status-title">{t("home.preflightCameraTitle")}</p>
+              <p className="preflight-status-value">
+                {toPermissionStatusLabel(cameraPermission, t)}
+              </p>
+              <button
+                className="quest-button quest-button--ghost"
+                type="button"
+                onClick={(): void => {
+                  play("tap");
+                  void requestCameraPermission();
+                }}
+                disabled={cameraPermission === "checking"}
+              >
+                {t("home.preflightEnableCamera")}
+              </button>
+            </article>
+          </div>
+          <div className="quest-actions">
+            <button
+              className="quest-button"
+              type="button"
+              onClick={(): void => {
+                play("tap");
+                setStoredPreflightDismissed(true);
+                setIsPreflightDismissed(true);
+              }}
+            >
+              {t("home.preflightContinue")}
+            </button>
+          </div>
+        </section>
+      ) : null}
+
       <section className="quest-hero-card">
         <h1 className="quest-hero-title">{t("app.name")}</h1>
         <p className="quest-hero-copy">{t("home.heroCopy")}</p>

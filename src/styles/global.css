@@ -392,6 +392,10 @@ body::after {
   color: #fff;
   border-radius: var(--radius-button);
   padding: 0.58rem 0.96rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
   font: inherit;
   font-weight: 700;
   letter-spacing: 0.01em;
@@ -590,6 +594,48 @@ body::after {
   font-weight: 650;
 }
 
+.quest-offline-indicator {
+  margin-top: 0.62rem;
+  padding: 0.48rem 0.64rem;
+  border-radius: 0.68rem;
+  border: 1px solid rgba(216, 142, 47, 0.48);
+  background: rgba(255, 241, 218, 0.78);
+  color: #8a4d07;
+  font-weight: 680;
+}
+
+.quest-timeline {
+  margin-top: 0.72rem;
+  display: grid;
+  gap: 0.56rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.quest-timeline-item {
+  border: 1px solid var(--color-form-surface-border);
+  border-radius: 0.72rem;
+  background: var(--color-form-surface-bg);
+  padding: 0.5rem 0.58rem;
+}
+
+.quest-timeline-item--current {
+  border-color: rgba(74, 140, 206, 0.65);
+  box-shadow: 0 6px 14px rgba(32, 95, 156, 0.12);
+}
+
+.quest-timeline-label {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-muted);
+}
+
+.quest-timeline-value {
+  margin: 0.2rem 0 0;
+  font-size: 0.93rem;
+  font-weight: 700;
+}
+
 .quest-summary-grid {
   margin-top: 0.82rem;
   display: grid;
@@ -649,6 +695,80 @@ body::after {
   color: var(--color-route-copy);
 }
 
+.quest-summary-badge {
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.34rem;
+  border: 1px solid rgba(106, 164, 221, 0.58);
+  border-radius: 999px;
+  background: rgba(237, 246, 255, 0.9);
+  color: #0a4f97;
+  font-weight: 700;
+  font-size: 0.84rem;
+  padding: 0.3rem 0.62rem;
+}
+
+.quest-mobile-actionbar {
+  display: none;
+}
+
+.checkpoint-celebration {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 1320;
+  overflow: hidden;
+}
+
+.checkpoint-confetti {
+  position: absolute;
+  top: -1.2rem;
+  width: 0.56rem;
+  height: 1rem;
+  border-radius: 0.25rem;
+  background: linear-gradient(180deg, #29a0ff, #0a84ff 65%, #0564c6);
+  opacity: 0.95;
+  transform: rotate(22deg);
+  animation: confetti-fall 980ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+.checkpoint-celebration--final .checkpoint-confetti {
+  width: 0.6rem;
+  height: 1.1rem;
+  background: linear-gradient(180deg, #ffce7a, #f69c1d 62%, #db7c00);
+  animation-duration: 1450ms;
+}
+
+.preflight-panel {
+  border-style: dashed;
+}
+
+.preflight-status-grid {
+  margin-top: 0.8rem;
+  display: grid;
+  gap: 0.64rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.preflight-status-card {
+  border: 1px solid var(--color-route-border);
+  border-radius: 0.86rem;
+  padding: 0.72rem;
+  background: var(--color-route-bg-top);
+}
+
+.preflight-status-title {
+  margin: 0;
+  font-weight: 700;
+}
+
+.preflight-status-value {
+  margin: 0.42rem 0 0.62rem;
+  color: var(--color-muted);
+  font-weight: 650;
+}
+
 .quest-error,
 .bug-report-error {
   margin-top: 0.82rem;
@@ -669,6 +789,51 @@ body::after {
   transition:
     color var(--dur-fast) var(--ease-smooth),
     transform var(--dur-fast) var(--ease-out);
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid rgba(10, 132, 255, 0.78);
+  outline-offset: 2px;
+}
+
+.quest-button,
+.language-switcher-toggle,
+.theme-switcher-button,
+.sound-toggle-button {
+  min-height: 2.75rem;
+}
+
+.admin-dirty-pill {
+  margin-left: 0.48rem;
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid rgba(219, 155, 64, 0.5);
+  border-radius: 999px;
+  background: rgba(255, 238, 204, 0.86);
+  color: #8f5305;
+  padding: 0.08rem 0.45rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  vertical-align: middle;
+}
+
+.admin-preview-panel {
+  margin-top: 0.74rem;
+  border: 1px solid var(--color-form-surface-border);
+  border-radius: 0.78rem;
+  background: var(--color-form-surface-bg);
+  padding: 0.62rem 0.72rem;
+}
+
+.admin-preview-label {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--color-muted);
 }
 
 .top-controls {
@@ -1079,6 +1244,23 @@ html[data-theme="dark"] .quest-feedback {
   color: #b9dcff;
 }
 
+html[data-theme="dark"] .quest-offline-indicator {
+  border-color: rgba(201, 151, 83, 0.56);
+  background: rgba(69, 47, 18, 0.72);
+  color: #ffdca8;
+}
+
+html[data-theme="dark"] .quest-timeline-item--current {
+  border-color: rgba(109, 161, 210, 0.72);
+  box-shadow: 0 8px 18px rgba(8, 24, 40, 0.42);
+}
+
+html[data-theme="dark"] .quest-summary-badge {
+  border-color: rgba(102, 150, 196, 0.58);
+  background: rgba(23, 52, 79, 0.82);
+  color: #d8ebff;
+}
+
 html[data-theme="dark"] .quest-error,
 html[data-theme="dark"] .bug-report-error {
   border-color: rgba(197, 92, 110, 0.48);
@@ -1091,6 +1273,16 @@ html[data-theme="dark"] .quest-summary-card {
   background:
     linear-gradient(165deg, rgba(20, 44, 66, 0.92), rgba(16, 36, 54, 0.88)),
     rgba(21, 47, 70, 0.9);
+}
+
+html[data-theme="dark"] .admin-dirty-pill {
+  border-color: rgba(196, 147, 85, 0.64);
+  background: rgba(78, 55, 20, 0.78);
+  color: #ffd9a0;
+}
+
+html[data-theme="dark"] .admin-preview-panel {
+  background: rgba(16, 35, 52, 0.86);
 }
 
 html[data-theme="dark"] .run-abandon-warning-icon {
@@ -1213,6 +1405,39 @@ html[data-theme="dark"] .quest-button--ghost:not(:disabled):active {
     grid-template-columns: minmax(0, 1fr);
   }
 
+  .quest-shell {
+    padding-bottom: 9.6rem;
+  }
+
+  .quest-timeline {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .preflight-status-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .quest-actions--inline {
+    display: none;
+  }
+
+  .quest-mobile-actionbar {
+    position: fixed;
+    left: 0.72rem;
+    right: 0.72rem;
+    bottom: max(0.62rem, env(safe-area-inset-bottom));
+    z-index: 1250;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.5rem;
+    border: 1px solid var(--color-panel-border);
+    border-radius: 0.88rem;
+    background: var(--color-panel-bg);
+    backdrop-filter: blur(8px);
+    padding: 0.56rem;
+    box-shadow: 0 14px 28px rgba(13, 33, 52, 0.2);
+  }
+
   .qr-scanner-overlay {
     align-items: stretch;
     padding:
@@ -1309,6 +1534,18 @@ html[data-theme="dark"] .quest-button--ghost:not(:disabled):active {
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes confetti-fall {
+  from {
+    opacity: 1;
+    transform: translate3d(0, -8px, 0) rotate(18deg);
+  }
+
+  to {
+    opacity: 0.1;
+    transform: translate3d(0, 108vh, 0) rotate(520deg);
   }
 }
 

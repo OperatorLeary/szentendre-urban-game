@@ -12,3 +12,8 @@ pm run build passed after CSS update. Attempted Playwright skill client verifica
 - 2026-02-20: Implemented QR-entry restart mode for better tourist UX: when entering a station via QR start flow (`?entry=qr`), same-route active runs are safely abandoned and a new run is started from the scanned station sequence.
 - 2026-02-20: Added Phase 19 migration (`202602200010_phase19_long_route_qr_entry_param.sql`) to backfill long-route QR payloads with `?entry=qr` for consistent QR-first onboarding.
 - 2026-02-20: Implemented route-specific station content model (Phase 20) with new `route_stations` table, backfill + RLS, and repository read-path support with safe fallback to legacy `locations` fields if migration is not yet applied.
+- 2026-02-21: Validation run for "make sure everything works and the website builds properly" completed.
+- 2026-02-21: `npm run check` passed (lint, typecheck, build). Vite production build completed and PWA assets generated without errors.
+- 2026-02-21: Runtime smoke checks passed for both dev (`npm run dev -- --host 127.0.0.1 --port 4173`) and preview (`npm run preview -- --host 127.0.0.1 --port 4174`) with HTTP 200 and expected HTML title.
+- 2026-02-21: Attempted required `develop-web-game` Playwright client run; blocked because `playwright` package is not installed in this repo/environment (`ERR_MODULE_NOT_FOUND` from `web_game_playwright_client.js`).
+- TODO: Install Playwright (`npm i -D playwright` and `npx playwright install`) if automated gameplay verification with the skill client is needed in future runs.

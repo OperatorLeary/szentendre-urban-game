@@ -43,6 +43,20 @@ const hu = {
   "home.hideCameraScanner": "Kamera szkennelő elrejtése",
   "home.qrPayloadInvalid":
     "A QR-tartalomnak tartalmaznia kell az /r/{routeSlug}/l/{locationSlug} formátumot.",
+  "home.preflightTitle": "Gyors eszközellenőrzés indulás előtt",
+  "home.preflightCopy":
+    "Érdemes most engedélyezni a GPS-t és a kamerát, így az állomásoknál gyorsabb lesz az ellenőrzés.",
+  "home.preflightGpsTitle": "GPS hozzáférés",
+  "home.preflightCameraTitle": "Kamera hozzáférés",
+  "home.preflightEnableGps": "GPS engedélyezése",
+  "home.preflightEnableCamera": "Kamera engedélyezése",
+  "home.preflightContinue": "Folytatás most",
+  "home.permissionStatusGranted": "engedélyezve",
+  "home.permissionStatusDenied": "letiltva",
+  "home.permissionStatusPrompt": "engedélyt kér",
+  "home.permissionStatusChecking": "ellenőrzés...",
+  "home.permissionStatusUnsupported": "nem támogatott ezen az eszközön",
+  "home.permissionStatusUnknown": "ismeretlen állapot",
   "desktopNotice.title": "A játék mobilon az igazi",
   "desktopNotice.copy":
     "A legjobb élményért nyisd meg telefonon vagy tableten (iPhone, iPad, Android). Ezen az eszközön is folytathatod, de mobilon pontosabb a GPS és kényelmesebb a QR-szkennelés.",
@@ -83,6 +97,17 @@ const hu = {
   "admin.field.instructionFullHu": "Részletes instrukció (HU)",
   "admin.field.expectedAnswer": "Elsődleges helyes válasz",
   "admin.field.expectedAnswers": "Elfogadott válaszok (vesszővel elválasztva)",
+  "admin.publishStation": "Módosítások publikálása",
+  "admin.publishConfirm": "Biztosan publikálod ennek az állomásnak a módosításait?",
+  "admin.unsavedChangesCount": "Mentetlen módosítások: {count}",
+  "admin.unsavedRouteChangeConfirm":
+    "Vannak mentetlen módosítások. Biztosan útvonalat váltasz?",
+  "admin.unsavedSignOutConfirm":
+    "Vannak mentetlen módosítások. Biztosan kijelentkezel?",
+  "admin.showPreview": "Előnézet",
+  "admin.hidePreview": "Előnézet bezárása",
+  "admin.previewTitle": "Állomás nézet előnézet",
+  "admin.dirtyTag": "módosítva",
   "quest.reason.outside_radius":
     "A megengedett sugáron kívül vagy. Próbáld újra GPS-szel vagy használj QR-felülbírálást.",
   "quest.reason.incorrect_answer": "A válasz nem megfelelő. Próbáld újra.",
@@ -92,6 +117,15 @@ const hu = {
   "quest.reason.malformed": "Érvénytelen QR-tartalom.",
   "quest.reason.run_not_active": "A futó játék nem aktív.",
   "quest.reason.default": "Az ellenőrzés sikertelen.",
+  "quest.actionHint.outside_radius": "Lépj közelebb, majd próbáld újra GPS-szel.",
+  "quest.actionHint.incorrect_answer": "Ellenőrizd a feliratot, majd írd be újra a választ.",
+  "quest.actionHint.out_of_order": "Menj a következő várt állomásra, ott folytathatod.",
+  "quest.actionHint.already_checked_in":
+    "Ez már megvan, folytasd a következő állomással.",
+  "quest.actionHint.mismatch": "Olvasd be az aktuális állomás QR-kódját.",
+  "quest.actionHint.malformed": "Használd a kamera gombot és olvasd be újra a QR-t.",
+  "quest.actionHint.run_not_active": "Indíts új játékot a kezdőoldalról.",
+  "quest.actionHint.default": "Próbáld újra néhány másodperc múlva.",
   "quest.answerRequired": "Először add meg az állomás válaszát.",
   "quest.unableGetGpsPosition": "Nem sikerült GPS-pozíciót kérni.",
   "quest.gpsValidationFailed": "A GPS-ellenőrzés sikertelen.",
@@ -136,6 +170,20 @@ const hu = {
   "quest.hideQrScanner": "QR-szkennelő elrejtése",
   "quest.scanQrOverride": "QR-felülbírálás szkennelés",
   "quest.currentDistance": "Jelenlegi távolság az állomástól",
+  "quest.timelineTitle": "Állomásfolyam",
+  "quest.timelinePrevious": "Előző",
+  "quest.timelineCurrent": "Aktuális",
+  "quest.timelineNext": "Következő",
+  "quest.timelineNone": "nincs",
+  "quest.offlineBanner":
+    "Offline mód: a validálás ideiglenesen nem elérhető, amint visszatér a net, folytathatod.",
+  "quest.offlineBannerQueued":
+    "Offline mód: van sorban álló ellenőrzés, automatikusan újrapróbáljuk online állapotban.",
+  "quest.offlineQueuedGps":
+    "Nincs hálózat. A GPS-ellenőrzést sorba tettük, online állapotban újrapróbáljuk.",
+  "quest.offlineQueuedQr":
+    "Nincs hálózat. A QR-ellenőrzést sorba tettük, online állapotban újrapróbáljuk.",
+  "quest.onlineRetrying": "Hálózat visszatért, újrapróbáljuk az ellenőrzést...",
   "quest.summaryTitle": "Útvonal teljesítve",
   "quest.summarySubtitle": "Összegzés: {routeName}",
   "quest.summaryDurationLabel": "Teljes idő",
@@ -144,6 +192,8 @@ const hu = {
   "quest.summaryCardTitle": "Sikeres teljesítés",
   "quest.summaryShareButton": "Összegzés megosztása",
   "quest.summaryDownloadButton": "Kártya letöltése (PNG)",
+  "quest.summaryStartAnotherRoute": "Új útvonal indítása",
+  "quest.summaryFinaleBadge": "Küldetés teljesítve",
   "quest.summaryPrivacyNote":
     "Az összegzés helyben készül. Nem küldünk rólad személyes adatot.",
   "quest.summaryShareDialogTitle": "Szentendre Városi Kaland összegzés",
@@ -226,6 +276,20 @@ const en: Record<TranslationKey, string> = {
   "home.hideCameraScanner": "Hide camera scanner",
   "home.qrPayloadInvalid":
     "QR payload must contain /r/{routeSlug}/l/{locationSlug}.",
+  "home.preflightTitle": "Quick device check before starting",
+  "home.preflightCopy":
+    "Grant GPS and camera access now for faster checkpoint validation during the run.",
+  "home.preflightGpsTitle": "GPS access",
+  "home.preflightCameraTitle": "Camera access",
+  "home.preflightEnableGps": "Enable GPS",
+  "home.preflightEnableCamera": "Enable camera",
+  "home.preflightContinue": "Continue for now",
+  "home.permissionStatusGranted": "granted",
+  "home.permissionStatusDenied": "denied",
+  "home.permissionStatusPrompt": "prompt",
+  "home.permissionStatusChecking": "checking...",
+  "home.permissionStatusUnsupported": "unsupported on this device",
+  "home.permissionStatusUnknown": "unknown",
   "desktopNotice.title": "Best experienced on mobile",
   "desktopNotice.copy":
     "For the best experience, open this game on a phone or tablet (iPhone, iPad, Android). You can continue on this device, but GPS and QR scanning are usually better on mobile.",
@@ -266,6 +330,17 @@ const en: Record<TranslationKey, string> = {
   "admin.field.instructionFullHu": "Full instruction (HU)",
   "admin.field.expectedAnswer": "Primary expected answer",
   "admin.field.expectedAnswers": "Accepted answers (comma separated)",
+  "admin.publishStation": "Publish changes",
+  "admin.publishConfirm": "Publish changes for this station now?",
+  "admin.unsavedChangesCount": "Unsaved changes: {count}",
+  "admin.unsavedRouteChangeConfirm":
+    "You have unsaved changes. Switch route anyway?",
+  "admin.unsavedSignOutConfirm":
+    "You have unsaved changes. Sign out anyway?",
+  "admin.showPreview": "Preview",
+  "admin.hidePreview": "Hide preview",
+  "admin.previewTitle": "Station preview",
+  "admin.dirtyTag": "edited",
   "quest.reason.outside_radius":
     "You are outside the station radius. Retry GPS or use QR override.",
   "quest.reason.incorrect_answer": "Answer is incorrect. Please try again.",
@@ -275,6 +350,14 @@ const en: Record<TranslationKey, string> = {
   "quest.reason.malformed": "Invalid QR payload format.",
   "quest.reason.run_not_active": "Run is not active.",
   "quest.reason.default": "Validation failed.",
+  "quest.actionHint.outside_radius": "Move closer and retry with GPS.",
+  "quest.actionHint.incorrect_answer": "Check the sign again and retry your answer.",
+  "quest.actionHint.out_of_order": "Go to the expected next station to continue.",
+  "quest.actionHint.already_checked_in": "This station is already complete. Continue to the next one.",
+  "quest.actionHint.mismatch": "Scan the QR code of your current station.",
+  "quest.actionHint.malformed": "Use the camera scanner and scan the QR again.",
+  "quest.actionHint.run_not_active": "Start a new run from the home screen.",
+  "quest.actionHint.default": "Please retry in a few seconds.",
   "quest.answerRequired": "Please enter your station answer first.",
   "quest.unableGetGpsPosition": "Unable to get GPS position.",
   "quest.gpsValidationFailed": "GPS validation failed.",
@@ -319,6 +402,20 @@ const en: Record<TranslationKey, string> = {
   "quest.hideQrScanner": "Hide QR scanner",
   "quest.scanQrOverride": "Scan QR override",
   "quest.currentDistance": "Current distance to station",
+  "quest.timelineTitle": "Station flow",
+  "quest.timelinePrevious": "Previous",
+  "quest.timelineCurrent": "Current",
+  "quest.timelineNext": "Next",
+  "quest.timelineNone": "none",
+  "quest.offlineBanner":
+    "Offline mode: validation is temporarily unavailable. Continue when connection returns.",
+  "quest.offlineBannerQueued":
+    "Offline mode: a queued validation is waiting and will retry automatically online.",
+  "quest.offlineQueuedGps":
+    "No network. GPS validation was queued and will retry automatically online.",
+  "quest.offlineQueuedQr":
+    "No network. QR validation was queued and will retry automatically online.",
+  "quest.onlineRetrying": "Connection restored. Retrying queued validation...",
   "quest.summaryTitle": "Route completed",
   "quest.summarySubtitle": "Summary: {routeName}",
   "quest.summaryDurationLabel": "Total time",
@@ -327,6 +424,8 @@ const en: Record<TranslationKey, string> = {
   "quest.summaryCardTitle": "Quest completed",
   "quest.summaryShareButton": "Share summary",
   "quest.summaryDownloadButton": "Download card (PNG)",
+  "quest.summaryStartAnotherRoute": "Start another route",
+  "quest.summaryFinaleBadge": "Mission complete",
   "quest.summaryPrivacyNote":
     "This summary is generated locally. We do not send personal data.",
   "quest.summaryShareDialogTitle": "Szentendre City Quest summary",

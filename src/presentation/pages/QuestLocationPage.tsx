@@ -31,6 +31,15 @@ import { calculateHaversineDistanceMeters } from "@/shared/utils/haversine-dista
 import { isGlobalBypassAnswer } from "@/core/validation/checkin-bypass-policy";
 
 type NavigationMode = "text" | "map";
+type PendingValidation =
+  | {
+      readonly mode: "gps";
+    }
+  | {
+      readonly mode: "qr";
+      readonly payload: string;
+      readonly successKey: TranslationKey;
+    };
 
 const NAVIGATION_MODE_STORAGE_KEY = "szentendre-city-quest-navigation-mode";
 
@@ -221,24 +230,45 @@ function mapValidationReason(
   reason: string,
   translate: (key: TranslationKey) => string
 ): string {
+  let message: string;
+  let actionHint: string;
+
   switch (reason) {
     case "outside_radius":
-      return translate("quest.reason.outside_radius");
+      message = translate("quest.reason.outside_radius");
+      actionHint = translate("quest.actionHint.outside_radius");
+      break;
     case "incorrect_answer":
-      return translate("quest.reason.incorrect_answer");
+      message = translate("quest.reason.incorrect_answer");
+      actionHint = translate("quest.actionHint.incorrect_answer");
+      break;
     case "out_of_order":
-      return translate("quest.reason.out_of_order");
+      message = translate("quest.reason.out_of_order");
+      actionHint = translate("quest.actionHint.out_of_order");
+      break;
     case "already_checked_in":
-      return translate("quest.reason.already_checked_in");
+      message = translate("quest.reason.already_checked_in");
+      actionHint = translate("quest.actionHint.already_checked_in");
+      break;
     case "mismatch":
-      return translate("quest.reason.mismatch");
+      message = translate("quest.reason.mismatch");
+      actionHint = translate("quest.actionHint.mismatch");
+      break;
     case "malformed":
-      return translate("quest.reason.malformed");
+      message = translate("quest.reason.malformed");
+      actionHint = translate("quest.actionHint.malformed");
+      break;
     case "run_not_active":
-      return translate("quest.reason.run_not_active");
+      message = translate("quest.reason.run_not_active");
+      actionHint = translate("quest.actionHint.run_not_active");
+      break;
     default:
-      return translate("quest.reason.default");
+      message = translate("quest.reason.default");
+      actionHint = translate("quest.actionHint.default");
+      break;
   }
+
+  return `${message} ${actionHint}`;
 }
 
 const SUCCESS_CHEER_KEYS: readonly TranslationKey[] = [
@@ -260,6 +290,22 @@ function buildSuccessFeedback(
   return `${translate(baseKey)} ${translate(cheerKey)}`;
 }
 
+function resolveInitialOnlineState(): boolean {
+  if (typeof navigator === "undefined") {
+    return true;
+  }
+
+  return navigator.onLine;
+}
+
+function triggerHapticFeedback(pattern: number | number[]): void {
+  if (typeof navigator === "undefined" || typeof navigator.vibrate !== "function") {
+    return;
+  }
+
+  navigator.vibrate(pattern);
+}
+
 function QuestLocationPage(): JSX.Element {
   const { language, t } = useLanguage();
   const { play } = useSound();
@@ -273,6 +319,11 @@ function QuestLocationPage(): JSX.Element {
   const [isAbandonDialogOpen, setIsAbandonDialogOpen] = useState<boolean>(false);
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
   const [completionTimestamp, setCompletionTimestamp] = useState<Date | null>(null);
+  const [isOnline, setIsOnline] = useState<boolean>(resolveInitialOnlineState);
+  const [pendingValidation, setPendingValidation] = useState<PendingValidation | null>(null);
+  const [celebrationBurstToken, setCelebrationBurstToken] = useState<number>(0);
+  const [showCelebration, setShowCelebration] = useState<boolean>(false);
+  const [isFinalCelebration, setIsFinalCelebration] = useState<boolean>(false);
   const [navigationMode, setNavigationMode] = useState<NavigationMode>(
     resolveInitialNavigationMode
   );
@@ -338,6 +389,28 @@ function QuestLocationPage(): JSX.Element {
     window.localStorage.setItem(NAVIGATION_MODE_STORAGE_KEY, navigationMode);
   }, [navigationMode]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const handleOnline = (): void => {
+      setIsOnline(true);
+    };
+
+    const handleOffline = (): void => {
+      setIsOnline(false);
+    };
+
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+
+    return (): void => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []);
+
   useEffect((): void => {
     if (runSession.data?.session.isCompleted === true && completionTimestamp === null) {
       setCompletionTimestamp(new Date());
@@ -348,6 +421,30 @@ function QuestLocationPage(): JSX.Element {
       setCompletionTimestamp(null);
     }
   }, [completionTimestamp, runSession.data?.session.isCompleted]);
+
+  const triggerCelebration = useCallback((isFinal: boolean): void => {
+    setIsFinalCelebration(isFinal);
+    setCelebrationBurstToken((previous: number): number => previous + 1);
+    setShowCelebration(true);
+    triggerHapticFeedback(isFinal ? [35, 45, 50] : 35);
+  }, []);
+
+  useEffect(() => {
+    if (!showCelebration) {
+      return;
+    }
+
+    const timeout = window.setTimeout(
+      (): void => {
+        setShowCelebration(false);
+      },
+      isFinalCelebration ? 1600 : 1000
+    );
+
+    return (): void => {
+      window.clearTimeout(timeout);
+    };
+  }, [isFinalCelebration, showCelebration, celebrationBurstToken]);
 
   const locationValidation = useLocationValidation({
     runId: runSession.data?.run.id ?? "",
@@ -414,105 +511,58 @@ function QuestLocationPage(): JSX.Element {
         setFeedbackMessage(t("quest.routeCompleted"));
         setCompletionTimestamp(new Date());
         setIsScannerVisible(false);
+        triggerCelebration(true);
         play("finale");
         return;
       }
 
+      triggerCelebration(false);
       play("success");
 
       if (runSession.data !== null) {
         void navigate(toRouteLocationPath(runSession.data.route.slug, nextLocationSlug));
       }
     },
-    [navigate, play, runSession.data, t]
+    [navigate, play, runSession.data, t, triggerCelebration]
   );
 
-  const validateWithGps = useCallback(async (): Promise<void> => {
-    if (runSession.data === null || answerText.trim().length === 0) {
-      setFeedbackMessage(t("quest.answerRequired"));
-      return;
-    }
-
-    if (activeLocation !== null && isGlobalBypassAnswer(answerText)) {
-      const response = await locationValidation.validateWithQr(
-        activeLocation.qrToken.toString()
-      );
-
-      if (response === null) {
-        setFeedbackMessage(locationValidation.errorMessage ?? t("quest.qrValidationFailed"));
-        play("error");
-        return;
-      }
-
-      if (response.accepted) {
-        setFeedbackMessage(buildSuccessFeedback("quest.bypassAccepted", response.session, t));
-        handleValidationSuccess(response.session);
-        return;
-      }
-
-      setFeedbackMessage(mapValidationReason(response.reason, t));
-      play("error");
-      return;
-    }
-
-    const geoSnapshot = await geolocation.requestCurrentPosition();
-    if (geoSnapshot === null) {
-      setFeedbackMessage(geolocation.errorMessage ?? t("quest.unableGetGpsPosition"));
-      play("error");
-      return;
-    }
-
-    updateState({
-      gpsLatitude: geoSnapshot.position.latitude,
-      gpsLongitude: geoSnapshot.position.longitude
-    });
-
-    const response = await locationValidation.validateWithGps(geoSnapshot);
-    if (response === null) {
-      setFeedbackMessage(locationValidation.errorMessage ?? t("quest.gpsValidationFailed"));
-      play("error");
-      return;
-    }
-
-    if (response.accepted) {
-      setFeedbackMessage(buildSuccessFeedback("quest.gpsAccepted", response.session, t));
-      handleValidationSuccess(response.session);
-      return;
-    }
-
-    setFeedbackMessage(mapValidationReason(response.reason, t));
-    play("error");
-    updateState({
-      detectedDistanceMeters: response.distanceMeters ?? null
-    });
-  }, [
-    answerText,
-    geolocation,
-    handleValidationSuccess,
-    locationValidation,
-    updateState,
-    runSession.data,
-    activeLocation,
-    t,
-    play
-  ]);
-
-  const validateWithQr = useCallback(
-    async (payload: string): Promise<void> => {
+  const performQrValidation = useCallback(
+    async (
+      payload: string,
+      queueIfOffline: boolean,
+      successKey: TranslationKey = "quest.qrAccepted"
+    ): Promise<void> => {
       if (runSession.data === null || answerText.trim().length === 0) {
         setFeedbackMessage(t("quest.answerRequired"));
         return;
       }
 
+      if (!isOnline) {
+        if (queueIfOffline) {
+          setPendingValidation({
+            mode: "qr",
+            payload,
+            successKey
+          });
+          setFeedbackMessage(t("quest.offlineQueuedQr"));
+        }
+        return;
+      }
+
       const response = await locationValidation.validateWithQr(payload);
       if (response === null) {
+        if (!queueIfOffline) {
+          setPendingValidation(null);
+        }
         setFeedbackMessage(locationValidation.errorMessage ?? t("quest.qrValidationFailed"));
         play("error");
         return;
       }
 
+      setPendingValidation(null);
+
       if (response.accepted) {
-        setFeedbackMessage(buildSuccessFeedback("quest.qrAccepted", response.session, t));
+        setFeedbackMessage(buildSuccessFeedback(successKey, response.session, t));
         handleValidationSuccess(response.session);
         return;
       }
@@ -520,8 +570,125 @@ function QuestLocationPage(): JSX.Element {
       setFeedbackMessage(mapValidationReason(response.reason, t));
       play("error");
     },
-    [answerText, handleValidationSuccess, locationValidation, runSession.data, t, play]
+    [answerText, handleValidationSuccess, isOnline, locationValidation, play, runSession.data, t]
   );
+
+  const performGpsValidation = useCallback(
+    async (queueIfOffline: boolean): Promise<void> => {
+      if (runSession.data === null || answerText.trim().length === 0) {
+        setFeedbackMessage(t("quest.answerRequired"));
+        return;
+      }
+
+      if (activeLocation !== null && isGlobalBypassAnswer(answerText)) {
+        await performQrValidation(
+          activeLocation.qrToken.toString(),
+          queueIfOffline,
+          "quest.bypassAccepted"
+        );
+        return;
+      }
+
+      if (!isOnline) {
+        if (queueIfOffline) {
+          setPendingValidation({
+            mode: "gps"
+          });
+          setFeedbackMessage(t("quest.offlineQueuedGps"));
+        }
+        return;
+      }
+
+      const geoSnapshot = await geolocation.requestCurrentPosition();
+      if (geoSnapshot === null) {
+        if (!queueIfOffline) {
+          setPendingValidation(null);
+        }
+        setFeedbackMessage(geolocation.errorMessage ?? t("quest.unableGetGpsPosition"));
+        play("error");
+        return;
+      }
+
+      updateState({
+        gpsLatitude: geoSnapshot.position.latitude,
+        gpsLongitude: geoSnapshot.position.longitude
+      });
+
+      const response = await locationValidation.validateWithGps(geoSnapshot);
+      if (response === null) {
+        if (!queueIfOffline) {
+          setPendingValidation(null);
+        }
+        setFeedbackMessage(locationValidation.errorMessage ?? t("quest.gpsValidationFailed"));
+        play("error");
+        return;
+      }
+
+      setPendingValidation(null);
+
+      if (response.accepted) {
+        setFeedbackMessage(buildSuccessFeedback("quest.gpsAccepted", response.session, t));
+        handleValidationSuccess(response.session);
+        return;
+      }
+
+      setFeedbackMessage(mapValidationReason(response.reason, t));
+      play("error");
+      updateState({
+        detectedDistanceMeters: response.distanceMeters ?? null
+      });
+    },
+    [
+      activeLocation,
+      answerText,
+      geolocation,
+      handleValidationSuccess,
+      isOnline,
+      locationValidation,
+      performQrValidation,
+      play,
+      runSession.data,
+      t,
+      updateState
+    ]
+  );
+
+  const validateWithGps = useCallback(async (): Promise<void> => {
+    await performGpsValidation(true);
+  }, [performGpsValidation]);
+
+  const validateWithQr = useCallback(
+    async (payload: string): Promise<void> => {
+      await performQrValidation(payload, true);
+    },
+    [performQrValidation]
+  );
+
+  useEffect(() => {
+    if (!isOnline || pendingValidation === null || locationValidation.isSubmitting) {
+      return;
+    }
+
+    setFeedbackMessage(t("quest.onlineRetrying"));
+
+    if (pendingValidation.mode === "gps") {
+      void performGpsValidation(false);
+      return;
+    }
+
+    void performQrValidation(
+      pendingValidation.payload,
+      false,
+      pendingValidation.successKey
+    );
+  }, [
+    isOnline,
+    locationValidation.isSubmitting,
+    pendingValidation,
+    performGpsValidation,
+    performQrValidation,
+    t
+  ]);
 
   const handleConfirmAbandon = useCallback(async (): Promise<void> => {
     const isSuccess: boolean = await runControl.abandonActiveRun();
@@ -584,6 +751,12 @@ function QuestLocationPage(): JSX.Element {
   const progressPercentage: number = runSession.data.session.completionPercentage;
   const hasAnswer: boolean = answerText.trim().length > 0;
   const nextLocationName: string | null = runSession.data.session.nextLocation?.name ?? null;
+  const previousLocationName: string =
+    runSession.data.locations.find(
+      (stationLocation: Location): boolean =>
+        stationLocation.sequenceNumber === activeLocation.sequenceNumber - 1
+    )?.name ?? t("quest.timelineNone");
+  const timelineNextLocationName: string = nextLocationName ?? t("quest.timelineNone");
   const summaryRouteSlug: string = runSession.data.route.slug;
   const isRunCompleted: boolean = runSession.data.session.isCompleted;
   const summaryCompletedAt: Date = completionTimestamp ?? new Date();
@@ -719,6 +892,27 @@ function QuestLocationPage(): JSX.Element {
         <p className="quest-muted">
           {t("quest.station")} {activeLocation.sequenceNumber}: {activeLocation.name}
         </p>
+        {!isOnline ? (
+          <p className="quest-offline-indicator" role="status">
+            {pendingValidation === null
+              ? t("quest.offlineBanner")
+              : t("quest.offlineBannerQueued")}
+          </p>
+        ) : null}
+        <div className="quest-timeline" role="list" aria-label={t("quest.timelineTitle")}>
+          <article className="quest-timeline-item" role="listitem">
+            <p className="quest-timeline-label">{t("quest.timelinePrevious")}</p>
+            <p className="quest-timeline-value">{previousLocationName}</p>
+          </article>
+          <article className="quest-timeline-item quest-timeline-item--current" role="listitem">
+            <p className="quest-timeline-label">{t("quest.timelineCurrent")}</p>
+            <p className="quest-timeline-value">{activeLocation.name}</p>
+          </article>
+          <article className="quest-timeline-item" role="listitem">
+            <p className="quest-timeline-label">{t("quest.timelineNext")}</p>
+            <p className="quest-timeline-value">{timelineNextLocationName}</p>
+          </article>
+        </div>
       </section>
 
       <section className="quest-panel">
@@ -778,6 +972,7 @@ function QuestLocationPage(): JSX.Element {
       <section className="quest-panel">
         {isRunCompleted ? (
           <>
+            <p className="quest-summary-badge">{t("quest.summaryFinaleBadge")}</p>
             <h2 className="quest-panel-title">{t("quest.summaryTitle")}</h2>
             <p className="quest-copy">
               {t("quest.summarySubtitle", { routeName: localizedRouteTitle })}
@@ -830,6 +1025,9 @@ function QuestLocationPage(): JSX.Element {
               >
                 {t("quest.summaryDownloadButton")}
               </button>
+              <Link className="quest-button quest-button--ghost" to={ROUTES.home}>
+                {t("quest.summaryStartAnotherRoute")}
+              </Link>
             </div>
             <p className="quest-muted">{t("quest.summaryPrivacyNote")}</p>
           </>
@@ -859,7 +1057,31 @@ function QuestLocationPage(): JSX.Element {
             </label>
             <p className="quest-muted quest-answer-hint">{t("quest.answerQuickHint")}</p>
 
-            <div className="quest-actions">
+            <div className="quest-actions quest-actions--inline">
+              <button
+                className="quest-button"
+                type="button"
+                disabled={!hasAnswer || locationValidation.isSubmitting || geolocation.isLoading}
+                onClick={(): void => {
+                  play("tap");
+                  void validateWithGps();
+                }}
+              >
+                {geolocation.isLoading ? t("quest.readingGps") : t("quest.validateWithGps")}
+              </button>
+              <button
+                className="quest-button quest-button--ghost"
+                type="button"
+                disabled={!hasAnswer || locationValidation.isSubmitting}
+                onClick={(): void => {
+                  play("tap");
+                  setIsScannerVisible((isVisible: boolean): boolean => !isVisible);
+                }}
+              >
+                {isScannerVisible ? t("quest.hideQrScanner") : t("quest.scanQrOverride")}
+              </button>
+            </div>
+            <div className="quest-mobile-actionbar" role="group" aria-label={t("quest.questionTitle")}>
               <button
                 className="quest-button"
                 type="button"
@@ -930,6 +1152,27 @@ function QuestLocationPage(): JSX.Element {
           {t("quest.exitHome")}
         </Link>
       </section>
+
+      {showCelebration ? (
+        <section
+          key={`${String(celebrationBurstToken)}-${isFinalCelebration ? "final" : "step"}`}
+          className={`checkpoint-celebration ${
+            isFinalCelebration ? "checkpoint-celebration--final" : ""
+          }`}
+          aria-hidden="true"
+        >
+          {Array.from({ length: isFinalCelebration ? 24 : 14 }).map((_, index: number) => (
+            <span
+              key={index}
+              className="checkpoint-confetti"
+              style={{
+                left: `${String((index / (isFinalCelebration ? 24 : 14)) * 100)}%`,
+                animationDelay: `${String(index * 22)}ms`
+              }}
+            />
+          ))}
+        </section>
+      ) : null}
 
       <AbandonRunDialog
         isOpen={isAbandonDialogOpen}
