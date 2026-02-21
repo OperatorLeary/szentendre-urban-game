@@ -109,15 +109,6 @@ export function DesktopDeviceNotice(props: DesktopDeviceNoticeProps): JSX.Elemen
       }}
     >
       <div className="desktop-device-notice-sheet" ref={sheetRef} tabIndex={-1}>
-        <button
-          type="button"
-          className="desktop-device-notice-close"
-          data-testid="desktop-notice-close"
-          onClick={dismissNotice}
-          aria-label={t("desktopNotice.close")}
-        >
-          x
-        </button>
         <h2 id="desktop-device-notice-title" className="desktop-device-notice-title">
           {t("desktopNotice.title")}
         </h2>

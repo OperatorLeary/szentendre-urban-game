@@ -1614,24 +1614,8 @@ html[data-theme="dark"] .settings-gear-core {
   animation: desktop-notice-drop var(--dur-base) var(--ease-out) both;
 }
 
-.desktop-device-notice-close {
-  position: absolute;
-  top: 0.45rem;
-  right: 0.45rem;
-  width: 2rem;
-  height: 2rem;
-  border-radius: 999px;
-  border: 1px solid var(--color-control-button-border);
-  background: var(--color-control-button-bg);
-  color: var(--color-control-button-text);
-  font: inherit;
-  font-weight: 700;
-  cursor: pointer;
-}
-
 .desktop-device-notice-title {
   margin: 0;
-  padding-right: 2.4rem;
   font-size: 1.1rem;
 }
 
