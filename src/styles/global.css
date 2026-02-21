@@ -358,6 +358,7 @@ body::after {
   width: 100%;
   border: 1px solid var(--color-input-border);
   border-radius: var(--radius-input);
+  min-height: 2.8rem;
   padding: 0.66rem 0.84rem;
   font: inherit;
   color: inherit;
@@ -1758,30 +1759,33 @@ html[data-theme="dark"] .quest-button--ghost:not(:disabled):active {
   }
 
   .quest-actions--inline {
-    display: none;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .quest-actions--inline .quest-button {
+    width: 100%;
   }
 
   .quest-mobile-actionbar {
-    position: fixed;
-    left: 0.72rem;
-    right: 0.72rem;
-    bottom: max(0.62rem, env(safe-area-inset-bottom));
-    z-index: 1250;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: 0.5rem;
-    border: 1px solid var(--color-panel-border);
-    border-radius: 0.88rem;
-    background: var(--color-panel-bg);
-    backdrop-filter: blur(8px);
-    padding: 0.56rem;
-    box-shadow: 0 14px 28px rgba(13, 33, 52, 0.2);
+    display: none;
   }
 
   .quest-mobile-actionbar .quest-button {
     min-height: 3.02rem;
     font-size: 0.98rem;
     font-weight: 760;
+  }
+
+  .quest-input {
+    font-size: 16px;
+    min-height: 3rem;
+    border-width: 1.5px;
+  }
+
+  .run-abandon-modal {
+    place-items: start center;
+    padding-top: max(5.6rem, 18dvh);
   }
 
   .qr-scanner-overlay {

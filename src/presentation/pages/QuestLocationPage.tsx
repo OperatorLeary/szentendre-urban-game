@@ -1139,6 +1139,9 @@ function QuestLocationPage(): JSX.Element {
                 className="quest-input"
                 data-testid="quest-answer-input"
                 value={answerText}
+                placeholder={t("quest.yourAnswerLabel")}
+                aria-label={t("quest.yourAnswerLabel")}
+                autoComplete="off"
                 onChange={(event: ChangeEvent<HTMLInputElement>): void => {
                   setAnswerText(event.target.value);
                 }}
